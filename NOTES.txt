@@ -1,0 +1,23 @@
+-we'll need a main -> doyyyy
+-we'll need a gl viewer wrapper -> to be reused a lot later? -> look at GL code
+-we'll need a scene to manage drawables
+-we'll need a drawable subclass
+	-GL buffers
+	-get vertex buffer
+	-get index buffer
+	-get normal buffer
+
+-we'll include a dedicated mesh drawable class
+-HRBF draw will be a subclass of this
+	-but HRBF itself will have to be a separate class
+
+-HRBF segment will voxelize and push all the cubes to GL? is that crazy?
+-maybe we'll do points for now... less taxing on the GPU?
+
+TODO
+-set up a starter repo using the 563 GL basecode (skeleton)
+	-get GLFW working
+	-get a basic drawable cube class working -> refer back to 460 for classing, subclassing
+-get a basic mesh loader going
+-think about how to visualize the HRBF
+	-right now I'm thinking voxels
