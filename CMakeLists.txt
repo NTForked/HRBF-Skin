@@ -83,8 +83,8 @@ endif()
 # Add source files you want to compile (.cpp)
 set(CORE_SRC
         src/main.cpp
-        src/camera/camera.cpp
         src/viewer/viewer.cpp
+        src/viewer/glslUtility.cpp        
         src/scene/scene.cpp
         src/geom/geom.cpp
 )
