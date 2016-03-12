@@ -23,13 +23,13 @@ using namespace std;
 class Viewer {
 public:
 	// member variables for camera parameters
-	const float fovy = (float)(M_PI / 4);
+	const float fovy = 50.0f;
 	const float zNear = 0.10f;
-	const float zFar = 200.0f;
+	const float zFar = 100.0f;
 	mat4 projection;
 	float theta = 1.22f;
 	float phi = -0.65f;
-	float zoom = 150.0f;
+	float zoom = 5.0f;
 	vec3 lookAt = vec3(0.0f, 0.0f, 0.0f);
 	vec3 cameraPosition;
 
