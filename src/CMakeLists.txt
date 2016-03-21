@@ -1,5 +1,6 @@
 set(SOURCE_FILES 
- "HelloWorld.cpp"
+ "HRBFNode.cpp"
+ "HRBFNode.h"
 )
 
 find_package(Maya REQUIRED)

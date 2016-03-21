@@ -1,3 +1,11 @@
+MAYA INTERACTION NOTES
+-ok. skinning is a type of DEFORMER using SKIN CLUSTERS
+-with all DEFORMERS you can set the envelope, which is like how much the deformer is actually applied
+	-this is in deformer attributes
+	-presumably this is what the maya documentation means by percent command
+-
+
+********************************************************************************
 -we'll need a main -> doyyyy
 -we'll need a gl viewer wrapper -> to be reused a lot later? -> look at GL code
 -we'll need a scene to manage drawables
