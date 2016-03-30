@@ -1,0 +1,62 @@
+// How to skin:
+// 1) select some bone on skeleton
+// 2) select mesh
+// 3) skin by running bind_HRBFskin(). MAKE SURE YOUR SKELETON POSE MATCHES MESH POSE
+// 4) reimport weights
+
+proc connectJointCluster( string $jointName, int $i, string $skinClusterName )
+{
+    if ( !objExists( $jointName+".lockInfluenceWeights1" ) )
+    {
+        select -r $jointName;
+        addAttr -sn "liw" -ln "lockInfluenceWeights1" -at "bool";
+    }
+    connectAttr ($jointName+".liw") ($skinClusterName + ".lockWeights["+$i+"]");
+    connectAttr ($jointName+".worldMatrix[0]") ($skinClusterName + ".matrix["+$i+"]");
+    connectAttr ($jointName+".objectColorRGB") ($skinClusterName + ".influenceColor["+$i+"]");
+	float $m[] = `getAttr ($jointName+".wim")`;
+	setAttr ($skinClusterName + ".bindPreMatrix["+$i+"]") -type "matrix" $m[0] $m[1] $m[2] $m[3] $m[4] $m[5] $m[6] $m[7] $m[8] $m[9] $m[10] $m[11] $m[12] $m[13] $m[14] $m[15];
+}
+
+proc bind_HRBFskin() {
+    string $selectedNodes[] = `ls -sl`; // get selected nodes
+    print($selectedNodes); // debug
+    // TODO: check selection data
+    
+    // get the mesh
+    string $meshName;
+    for ($i = 0; $i < size($selectedNodes); $i++) {
+        if (`objectType $selectedNodes[$i]` == "transform") {
+            $meshName = $selectedNodes[$i] + "Shape";
+            break;
+        }
+    }
+    // select the mesh
+    print("selecting " + $meshName + "\n");
+    select -r $meshName;
+    
+    // make the skin node
+    string $clusterStr[] = `deformer -type "HRBFSkinCluster"`;
+	print($clusterStr);
+    string $skinClusterName = $clusterStr[0];
+    
+    // get a joint
+    string $rootJointName;
+    for ($i = 0; $i < size($selectedNodes); $i++) {
+        if (`objectType $selectedNodes[$i]` == "joint") {
+            $rootJointName = $selectedNodes[$i];
+            break;
+        }
+    }
+    
+    // get the other joints
+    string $otherJoints[] = `listRelatives -ad $rootJointName`;
+    
+    // bind the joints to the skin cluster
+    connectJointCluster( $rootJointName, 0 , $skinClusterName);
+    for ($i = 0; $i < size($otherJoints); $i++) {
+        connectJointCluster( $otherJoints[$i], $i + 1, $skinClusterName );
+    }
+}
+
+
