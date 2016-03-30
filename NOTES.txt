@@ -1,4 +1,28 @@
-03/29/2016 - Setting up the MEL
+03/29/2016 - Setting up HRBFs
+-we're going to need a HRBF manager class
+-and individual HRBF classes
+-all using Maya's underlying math, preferably
+-we'll initialize these in deform:
+	-on first deform, check if the HRBF manager is null
+	-if so, build the HRBF using the data passed in
+-can we tie skin weight changes to skin weight changes?
+-or can we add a button that calls a method in here to recompute HRBFs?
+
+03/29/2016 - LBS vs. Dual Quaternion
+-so the example code implements LBS
+-splitting matrix into translate/rotate components:
+	-assuming maya rotates and then translates, easy as just accessing portions
+-need way to make quat from 3x3 rotaiton -> http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/
+-adam's slides are really good, very implementation rich
+	-breaks down to:
+	-get rotation quat (more or less a 4-tuple)
+	-get translation quat from translation vector, rotation quat -> dual quaternion coupling
+	-make matrix with rotation part based on rotation quat
+	-compute translation vector from translation and rotation quat -> dual quat coupling 
+-how to blend dual quats without an explicit representation?
+-do you literally just multiply both quaternions by the weight? lol
+
+03/29/2016 - Setting up the MEL [beta: done]
 
 
 -original PROC provided with plugin

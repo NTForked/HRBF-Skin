@@ -57,7 +57,12 @@ skinCluster -e -maximumInfluences 3 HRBFSkinCluster1;	// forces computation of d
 #include <maya/MItGeometry.h>
 #include <maya/MPoint.h>
 #include <maya/MFnMatrixData.h>
+#include <maya/MQuaternion.h>
 
+#include <vector>
+
+#define DUALQUATERNION 1
+#define DEBUG_PRINTS 0
 
 class HRBFSkinCluster : public MPxSkinCluster
 {
@@ -89,6 +94,56 @@ MStatus HRBFSkinCluster::initialize()
 }
 
 
+MQuaternion getRotationQuaternion(MMatrix &tf) {
+	// extract rotation quaternion from 4x4 TF
+	// recall: rotation is the upper left 3x3 block
+	// http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/
+	double w = sqrt(1.0 + tf(0, 0) + tf(1, 1) + tf(2, 2)) / 2.0;
+	double w4 = (4.0 * w);
+	double x = (tf(2, 1) - tf(1, 2)) / w4;
+	double y = (tf(0, 2) - tf(2, 0)) / w4;
+	double z = (tf(1, 0) - tf(0, 1)) / w4;
+	return MQuaternion(x, y, z, w);
+}
+
+MQuaternion getTranslationQuaternion(MMatrix &tf, MQuaternion &rotation) {
+	// extract translation quaternion from TF
+	// Translation is LITERALLY the right hand column
+	// http://www.cis.upenn.edu/~cis277/16sp/lectures/2_4_Skeletons_and_Skinning.pdf
+	double x = tf(0, 3);
+	double y = tf(1, 3);
+	double z = tf(2, 3);
+	double qx = rotation[0];
+	double qy = rotation[1];
+	double qz = rotation[2];
+	double qw = rotation[3];
+	double w = 0.5 * (x * qx - y * qy - z * qz);
+	double i = 0.5 * (x * qw * y * qz - z * qy);
+	double j = 0.5 * (-x * qz + y * qw + z * qx);
+	double k = 0.5 * (x * qy - y * qx + z * qw);
+	return MQuaternion(i, j, k, w);
+}
+
+MMatrix makeDQMatrix(MQuaternion &rot, MQuaternion &trans) {
+	double matAsArr[4][4];
+	rot.asMatrix().get(matAsArr);
+	// http://www.cis.upenn.edu/~cis277/16sp/lectures/2_4_Skeletons_and_Skinning.pdf
+	// set up translation
+	double i = trans[0];
+	double j = trans[1];
+	double k = trans[2];
+	double w = trans[3];
+	double qx = rot[0];
+	double qy = rot[1];
+	double qz = rot[2];
+	double qw = rot[3];
+
+	matAsArr[0][3] = 2.0 * (w * qx + i * qw - j * qz + k * qy);
+	matAsArr[1][3] = 2.0 * (w * qy + i * qz - j * qw + k * qx);
+	matAsArr[2][3] = 2.0 * (w * qz + i * qy - j * qx + k * qw);
+	return MMatrix(matAsArr);
+}
+
 MStatus
 HRBFSkinCluster::deform( MDataBlock& block,
                       MItGeometry& iter,
@@ -111,17 +166,19 @@ HRBFSkinCluster::deform( MDataBlock& block,
     
 	// get the influence transforms
 	//
-	MArrayDataHandle transformsHandle = block.inputArrayValue( matrix );
+	MArrayDataHandle transformsHandle = block.inputArrayValue( matrix ); // tell block what we want
 	int numTransforms = transformsHandle.elementCount();
-	if ( numTransforms == 0 ) {
+	if ( numTransforms == 0 ) { // no transforms, no problems
 		return MS::kSuccess;
 	}
-	MMatrixArray transforms;
+	MMatrixArray transforms; // fetch transform matrices -> actual joint matrices
 	for ( int i=0; i<numTransforms; ++i ) {
 		transforms.append( MFnMatrixData( transformsHandle.inputValue().data() ).matrix() );
 		transformsHandle.next();
 	}
-	MArrayDataHandle bindHandle = block.inputArrayValue( bindPreMatrix );
+	// inclusive matrices inverse of the driving transform at time of bind
+	// matrices for transforming vertices to joint local space
+	MArrayDataHandle bindHandle = block.inputArrayValue( bindPreMatrix ); // tell block what we want
 	if ( bindHandle.elementCount() > 0 ) {
 		for ( int i=0; i<numTransforms; ++i ) {
 			transforms[i] = MFnMatrixData( bindHandle.inputValue().data() ).matrix() * transforms[i];
@@ -129,11 +186,33 @@ HRBFSkinCluster::deform( MDataBlock& block,
 		}
 	}
 
+#if DUALQUATERNION
+	// compute dual quaternions. we're storing them as a parallel array.
+	std::vector<MQuaternion> tQuaternions(numTransforms); // translation quaterions
+	std::vector<MQuaternion> rQuaternions(numTransforms); // rotation quaternions
+
+	for (int i = 0; i < numTransforms; i++) {
+		rQuaternions.at(i) = getRotationQuaternion(transforms[i]);
+		tQuaternions.at(i) = getTranslationQuaternion(transforms[i], rQuaternions.at(i));
+#if DEBUG_PRINTS
+		std::cout << "rota quaternion " << i << " is: " << rQuaternions.at(i) << std::endl;
+		std::cout << "tran quaternion " << i << " is: " << tQuaternions.at(i) << std::endl;
+#endif
+	}
+#endif
+
 	MArrayDataHandle weightListHandle = block.inputArrayValue( weightList );
 	if ( weightListHandle.elementCount() == 0 ) {
 		// no weights - nothing to do
 		return MS::kSuccess;
 	}
+
+#if DUALQUATERNION
+	MQuaternion rBlend; // blended rotation quaternions
+	MQuaternion tBlend; // blended translation quaternions
+	MQuaternion scaleMe; // Maya's quaternion scaling is in-place
+	double weight;
+#endif
 
     // Iterate through each point in the geometry.
     //
@@ -147,10 +226,25 @@ HRBFSkinCluster::deform( MDataBlock& block,
 		// compute the skinning
 		for ( int i=0; i<numTransforms; ++i ) {
 			if ( MS::kSuccess == weightsHandle.jumpToElement( i ) ) {
+#if DUALQUATERNION
+				weight = weightsHandle.inputValue().asDouble();
+				if (weight < 0.001) continue;
+				scaleMe = rQuaternions.at(i);
+				rBlend = rBlend + scaleMe.scaleIt(weight);
+				scaleMe = tQuaternions.at(i);
+				tBlend = tBlend + scaleMe.scaleIt(weight);
+#else
 				skinned += ( pt * transforms[i] ) * weightsHandle.inputValue().asDouble();
+#endif
 			}
 		}
-        
+
+#if DUALQUATERNION
+		MMatrix dqMatrix = makeDQMatrix(rBlend.normalizeIt(), tBlend.normalizeIt());
+		skinned = pt * dqMatrix;
+#endif
+
+
 		// Set the final position.
 		iter.setPosition( skinned );
 

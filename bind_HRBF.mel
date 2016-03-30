@@ -6,11 +6,15 @@
 
 proc connectJointCluster( string $jointName, int $i, string $skinClusterName )
 {
+    /* not sure what this does, but it breaks some kinds of binds and the attribute
+       seems to be off for binding to FBX import skeletons anyway.
+       
     if ( !objExists( $jointName+".lockInfluenceWeights1" ) )
     {
         select -r $jointName;
         addAttr -sn "liw" -ln "lockInfluenceWeights1" -at "bool";
     }
+    */
     connectAttr ($jointName+".liw") ($skinClusterName + ".lockWeights["+$i+"]");
     connectAttr ($jointName+".worldMatrix[0]") ($skinClusterName + ".matrix["+$i+"]");
     connectAttr ($jointName+".objectColorRGB") ($skinClusterName + ".influenceColor["+$i+"]");
