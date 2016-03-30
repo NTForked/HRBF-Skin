@@ -1,3 +1,33 @@
+Setting up the MEL
+
+	polyTorus -r 1 -sr 0.5 -tw 0 -sx 50 -sy 50 -ax 0 1 0 -cuv 1 -ch 1;
+	string $clusterStr[] = `deformer -type "basicSkinCluster"`;
+	print($clusterStr);
+
+-this little sequence of commands will make a torus, make a skin cluster attached, and hand you the name of said cluster
+
+	ls -sl
+
+-this will list the selected stuff in order of selection. you can do:
+	
+	string $selectedNodes[] = `ls -sl`;
+	print($selectedNodes[0]);
+
+	string $selectedNodes[] = `ls -sl`;
+	for ($i = 0; $i < size($selectedNodes); $i++) {
+	    print("type: " + `objectType $selectedNodes[$i]`);
+	    print(" name: ");
+	    print($selectedNodes[$i]);
+	    print("\n");    
+	}
+
+-this is how you walk over the joints of a skeleton
+
+	listRelatives -ad "joint1"; //-> returns a string array
+
+
+
+**********************************************************************************
 MAYA INTERACTION NOTES
 -ok. skinning is a type of DEFORMER using SKIN CLUSTERS
 -with all DEFORMERS you can set the envelope, which is like how much the deformer is actually applied
