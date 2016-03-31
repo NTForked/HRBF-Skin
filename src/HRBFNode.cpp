@@ -64,7 +64,7 @@ skinCluster -e -maximumInfluences 3 HRBFSkinCluster1;	// forces computation of d
 #define DUALQUATERNION 1
 #define DEBUG_PRINTS 0
 
-class HRBFSkinCluster : public MPxSkinCluster
+class HRBFSkinCluster : public MPxSkinCluster // can we subclass the dual quaternion one in Maya?
 {
 public:
     static  void*   creator();
@@ -100,9 +100,9 @@ MQuaternion getRotationQuaternion(MMatrix &tf) {
 	// http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/
 	double w = sqrt(1.0 + tf(0, 0) + tf(1, 1) + tf(2, 2)) / 2.0;
 	double w4 = (4.0 * w);
-	double x = (tf(2, 1) - tf(1, 2)) / w4;
-	double y = (tf(0, 2) - tf(2, 0)) / w4;
-	double z = (tf(1, 0) - tf(0, 1)) / w4;
+	double x = (tf(1, 2) - tf(2, 1)) / w4;
+	double y = (tf(2, 0) - tf(0, 2)) / w4;
+	double z = (tf(0, 1) - tf(1, 0)) / w4;
 	return MQuaternion(x, y, z, w);
 }
 
@@ -110,9 +110,9 @@ MQuaternion getTranslationQuaternion(MMatrix &tf, MQuaternion &rotation) {
 	// extract translation quaternion from TF
 	// Translation is LITERALLY the right hand column
 	// http://www.cis.upenn.edu/~cis277/16sp/lectures/2_4_Skeletons_and_Skinning.pdf
-	double x = tf(0, 3);
-	double y = tf(1, 3);
-	double z = tf(2, 3);
+	double x = tf(3, 0);
+	double y = tf(3, 1);
+	double z = tf(3, 2);
 	double qx = rotation[0];
 	double qy = rotation[1];
 	double qz = rotation[2];
