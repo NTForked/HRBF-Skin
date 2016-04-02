@@ -147,7 +147,7 @@ MMatrix makeDQMatrix(MQuaternion &rot, MQuaternion &trans) {
 MStatus
 HRBFSkinCluster::deform( MDataBlock& block,
                       MItGeometry& iter,
-                      const MMatrix& /*m*/,
+                      const MMatrix& m,
                       unsigned int multiIndex)
 //
 // Method: deform
@@ -162,6 +162,8 @@ HRBFSkinCluster::deform( MDataBlock& block,
 //
 //
 {
+	//MPxSkinCluster::deform(block, iter, m, multiIndex);
+
     MStatus returnStatus;
     
 	// get the influence transforms
@@ -219,6 +221,9 @@ HRBFSkinCluster::deform( MDataBlock& block,
     for ( ; !iter.isDone(); iter.next()) {
         MPoint pt = iter.position();
 		MPoint skinned;
+
+		rBlend = MQuaternion(); // reset
+		tBlend = MQuaternion(); // reset
 
 		// get the weights for this point
 		MArrayDataHandle weightsHandle = weightListHandle.inputValue().child( weights );
