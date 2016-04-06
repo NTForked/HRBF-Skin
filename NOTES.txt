@@ -1,3 +1,16 @@
+04/06/2016 - fixing DQ, adding HRBF setup
+-things to try to fix DQ:
+	-try transposing each set of matrices individually -> I think the translation one is right
+		-compare side-by-side with Maya's DQ -> ok so I think the matrix access is all fixed
+	-try only doing DQ for the local transform and applying the inverse TF as usual
+
+-discovery: with the code as it was at last commit (bug freakout) the translation doesn't do anything on its own! ruh roh!
+	-turns out... we weren't building the blended DQ matrix with the right row/column order
+	-fixing that makes it do SOMETHING, but it's still wrong
+	-something something something affine transform?
+	-should probably try the DQ only local transforms thing?
+	-do we need to only DQ the local transforms though?
+
 03/29/2016 - Setting up HRBFs
 -we're going to need a HRBF manager class
 -and individual HRBF classes

@@ -98,6 +98,7 @@ MQuaternion getRotationQuaternion(MMatrix &tf) {
 	// extract rotation quaternion from 4x4 TF
 	// recall: rotation is the upper left 3x3 block
 	// http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/
+	// the matrix implementation in the example appears to be transposed relative to Maya's
 	double w = sqrt(1.0 + tf(0, 0) + tf(1, 1) + tf(2, 2)) / 2.0;
 	double w4 = (4.0 * w);
 	double x = (tf(1, 2) - tf(2, 1)) / w4;
@@ -118,7 +119,7 @@ MQuaternion getTranslationQuaternion(MMatrix &tf, MQuaternion &rotation) {
 	double qz = rotation[2];
 	double qw = rotation[3];
 	double w = 0.5 * (x * qx - y * qy - z * qz);
-	double i = 0.5 * (x * qw * y * qz - z * qy);
+	double i = 0.5 * (x * qw + y * qz - z * qy);
 	double j = 0.5 * (-x * qz + y * qw + z * qx);
 	double k = 0.5 * (x * qy - y * qx + z * qw);
 	return MQuaternion(i, j, k, w);
@@ -138,9 +139,11 @@ MMatrix makeDQMatrix(MQuaternion &rot, MQuaternion &trans) {
 	double qz = rot[2];
 	double qw = rot[3];
 
-	matAsArr[0][3] = 2.0 * (w * qx + i * qw - j * qz + k * qy);
-	matAsArr[1][3] = 2.0 * (w * qy + i * qz - j * qw + k * qx);
-	matAsArr[2][3] = 2.0 * (w * qz + i * qy - j * qx + k * qw);
+	double length = sqrt(qx * qx + qy * qy + qz * qz + qw * qw);
+
+	matAsArr[3][0] = 2.0 * (w * qx + i * qw - j * qz + k * qy) / length;
+	matAsArr[3][1] = 2.0 * (w * qy + i * qz - j * qw + k * qx) / length;
+	matAsArr[3][2] = 2.0 * (w * qz + i * qy - j * qx + k * qw) / length;
 	return MMatrix(matAsArr);
 }
 
