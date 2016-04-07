@@ -157,7 +157,7 @@ MMatrix makeDQMatrix(MQuaternion &rot, MQuaternion &trans) {
 	//double qz = rot[2];
 	//double qw = rot[3];
 
-	//double length = sqrt(qx * qx + qy * qy + qz * qz + qw * qw);
+	double length = sqrt(rot[0] * rot[0] + rot[1] * rot[1] + rot[2] * rot[2] + rot[3] * rot[3]);
 
 	//matAsArr[3][0] = 2.0 * (w * qx + i * qw - j * qz + k * qy) / length;
 	//matAsArr[3][1] = 2.0 * (w * qy + i * qz - j * qw + k * qx) / length;
@@ -174,9 +174,9 @@ MMatrix makeDQMatrix(MQuaternion &rot, MQuaternion &trans) {
 	q0[2] = rot[1];
 	q0[3] = rot[2];
 
-	matAsArr[3][0] = 2.0*(-t[0] * q0[1] + t[1] * q0[0] - t[2] * q0[3] + t[3] * q0[2]);// / length;
-	matAsArr[3][1] = 2.0*(-t[0] * q0[2] + t[1] * q0[3] + t[2] * q0[0] - t[3] * q0[1]);// / length;
-	matAsArr[3][2] = 2.0*(-t[0] * q0[3] - t[1] * q0[2] + t[2] * q0[1] + t[3] * q0[0]);// / length;
+	matAsArr[3][0] = 2.0*(-t[0] * q0[1] + t[1] * q0[0] - t[2] * q0[3] + t[3] * q0[2]) / length;
+	matAsArr[3][1] = 2.0*(-t[0] * q0[2] + t[1] * q0[3] + t[2] * q0[0] - t[3] * q0[1]) / length;
+	matAsArr[3][2] = 2.0*(-t[0] * q0[3] - t[1] * q0[2] + t[2] * q0[1] + t[3] * q0[0]) / length;
 
 	return MMatrix(matAsArr);
 }
@@ -232,7 +232,7 @@ HRBFSkinCluster::deform( MDataBlock& block,
 
 	for (int i = 0; i < numTransforms; i++) {
 		rQuaternions.at(i) = getRotationQuaternion(transforms[i]);
-		//rQuaternions.at(i).normalizeIt();
+		rQuaternions.at(i).normalizeIt();
 		tQuaternions.at(i) = getTranslationQuaternion(transforms[i], rQuaternions.at(i));
 #if DEBUG_PRINTS
 		std::cout << "rota quaternion " << i << " is: " << rQuaternions.at(i) << std::endl;
@@ -272,8 +272,8 @@ HRBFSkinCluster::deform( MDataBlock& block,
 		for ( int i=0; i<numTransforms; ++i ) {
 			if ( MS::kSuccess == weightsHandle.jumpToElement( i ) ) {
 #if DUALQUATERNION
+
 				weight = weightsHandle.inputValue().asDouble();
-				if (weight < 0.001) continue;
 				scaleMe = rQuaternions.at(i);
 				rBlend = rBlend + scaleMe.scaleIt(weight);
 				scaleMe = tQuaternions.at(i);
@@ -289,7 +289,6 @@ HRBFSkinCluster::deform( MDataBlock& block,
 		MMatrix dqMatrix = makeDQMatrix(rBlend.normalizeIt(), tBlend);
 		skinned = pt * dqMatrix;
 #endif
-
 
 		// Set the final position.
 		iter.setPosition( skinned );
