@@ -9,7 +9,8 @@
 	-fixing that makes it do SOMETHING, but it's still wrong
 	-something something something affine transform?
 	-should probably try the DQ only local transforms thing?
-	-do we need to only DQ the local transforms though?
+	-do we need to only DQ the local transforms though? [WRONG]
+-problem atm seems to be in construction of translation quaternion
 
 03/29/2016 - Setting up HRBFs
 -we're going to need a HRBF manager class

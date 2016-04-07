@@ -104,6 +104,7 @@ MQuaternion getRotationQuaternion(MMatrix &tf) {
 	double x = (tf(1, 2) - tf(2, 1)) / w4;
 	double y = (tf(2, 0) - tf(0, 2)) / w4;
 	double z = (tf(0, 1) - tf(1, 0)) / w4;
+
 	return MQuaternion(x, y, z, w);
 }
 
@@ -111,6 +112,7 @@ MQuaternion getTranslationQuaternion(MMatrix &tf, MQuaternion &rotation) {
 	// extract translation quaternion from TF
 	// Translation is LITERALLY the right hand column
 	// http://www.cis.upenn.edu/~cis277/16sp/lectures/2_4_Skeletons_and_Skinning.pdf
+	/*
 	double x = tf(3, 0);
 	double y = tf(3, 1);
 	double z = tf(3, 2);
@@ -121,7 +123,23 @@ MQuaternion getTranslationQuaternion(MMatrix &tf, MQuaternion &rotation) {
 	double w = 0.5 * (x * qx - y * qy - z * qz);
 	double i = 0.5 * (x * qw + y * qz - z * qy);
 	double j = 0.5 * (-x * qz + y * qw + z * qx);
-	double k = 0.5 * (x * qy - y * qx + z * qw);
+	double k = 0.5 * (x * qy - y * qx + z * qw); */
+
+	double t[3];
+	t[0] = tf(3, 0);
+	t[1] = tf(3, 1);
+	t[2] = tf(3, 2);
+	double q0[4];
+	q0[0] = rotation[3];
+	q0[1] = rotation[0];
+	q0[2] = rotation[1];
+	q0[3] = rotation[2];
+
+	double w = - 0.5*( t[0] * q0[1] + t[1] * q0[2] + t[2] * q0[3]);
+	double i =   0.5*( t[0] * q0[0] + t[1] * q0[3] - t[2] * q0[2]);
+	double j =   0.5*(-t[0] * q0[3] + t[1] * q0[0] + t[2] * q0[1]);
+	double k =   0.5*( t[0] * q0[2] - t[1] * q0[1] + t[2] * q0[0]);
+
 	return MQuaternion(i, j, k, w);
 }
 
@@ -130,20 +148,36 @@ MMatrix makeDQMatrix(MQuaternion &rot, MQuaternion &trans) {
 	rot.asMatrix().get(matAsArr);
 	// http://www.cis.upenn.edu/~cis277/16sp/lectures/2_4_Skeletons_and_Skinning.pdf
 	// set up translation
-	double i = trans[0];
-	double j = trans[1];
-	double k = trans[2];
-	double w = trans[3];
-	double qx = rot[0];
-	double qy = rot[1];
-	double qz = rot[2];
-	double qw = rot[3];
+	//double i = trans[0];
+	//double j = trans[1];
+	//double k = trans[2];
+	//double w = trans[3];
+	//double qx = rot[0];
+	//double qy = rot[1];
+	//double qz = rot[2];
+	//double qw = rot[3];
 
-	double length = sqrt(qx * qx + qy * qy + qz * qz + qw * qw);
+	//double length = sqrt(qx * qx + qy * qy + qz * qz + qw * qw);
 
-	matAsArr[3][0] = 2.0 * (w * qx + i * qw - j * qz + k * qy) / length;
-	matAsArr[3][1] = 2.0 * (w * qy + i * qz - j * qw + k * qx) / length;
-	matAsArr[3][2] = 2.0 * (w * qz + i * qy - j * qx + k * qw) / length;
+	//matAsArr[3][0] = 2.0 * (w * qx + i * qw - j * qz + k * qy) / length;
+	//matAsArr[3][1] = 2.0 * (w * qy + i * qz - j * qw + k * qx) / length;
+	//matAsArr[3][2] = 2.0 * (w * qz + i * qy - j * qx + k * qw) / length;
+	double t[4];
+	double q0[4];
+	t[0] = trans[3];
+	t[1] = trans[0];
+	t[2] = trans[1];
+	t[3] = trans[2];
+
+	q0[0] = rot[3];
+	q0[1] = rot[0];
+	q0[2] = rot[1];
+	q0[3] = rot[2];
+
+	matAsArr[3][0] = 2.0*(-t[0] * q0[1] + t[1] * q0[0] - t[2] * q0[3] + t[3] * q0[2]);// / length;
+	matAsArr[3][1] = 2.0*(-t[0] * q0[2] + t[1] * q0[3] + t[2] * q0[0] - t[3] * q0[1]);// / length;
+	matAsArr[3][2] = 2.0*(-t[0] * q0[3] - t[1] * q0[2] + t[2] * q0[1] + t[3] * q0[0]);// / length;
+
 	return MMatrix(matAsArr);
 }
 
@@ -198,6 +232,7 @@ HRBFSkinCluster::deform( MDataBlock& block,
 
 	for (int i = 0; i < numTransforms; i++) {
 		rQuaternions.at(i) = getRotationQuaternion(transforms[i]);
+		//rQuaternions.at(i).normalizeIt();
 		tQuaternions.at(i) = getTranslationQuaternion(transforms[i], rQuaternions.at(i));
 #if DEBUG_PRINTS
 		std::cout << "rota quaternion " << i << " is: " << rQuaternions.at(i) << std::endl;
@@ -227,6 +262,8 @@ HRBFSkinCluster::deform( MDataBlock& block,
 
 		rBlend = MQuaternion(); // reset
 		tBlend = MQuaternion(); // reset
+		rBlend[3] = 0.0;
+		tBlend[3] = 0.0;
 
 		// get the weights for this point
 		MArrayDataHandle weightsHandle = weightListHandle.inputValue().child( weights );
@@ -248,7 +285,8 @@ HRBFSkinCluster::deform( MDataBlock& block,
 		}
 
 #if DUALQUATERNION
-		MMatrix dqMatrix = makeDQMatrix(rBlend.normalizeIt(), tBlend.normalizeIt());
+		//MMatrix dqMatrix = makeDQMatrix(rBlend.normalizeIt(), tBlend.normalizeIt());
+		MMatrix dqMatrix = makeDQMatrix(rBlend.normalizeIt(), tBlend);
 		skinned = pt * dqMatrix;
 #endif
 
