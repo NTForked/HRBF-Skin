@@ -60,9 +60,17 @@ skinCluster -e -maximumInfluences 3 HRBFSkinCluster1;	// forces computation of d
 #include <maya/MQuaternion.h>
 
 #include <vector>
+#include <maya/MFnNumericData.h>
+#include <maya/MFnNumericAttribute.h>
 
 #define DUALQUATERNION 1
 #define DEBUG_PRINTS 0
+
+#define McheckErr(stat,msg)			\
+	if ( MS::kSuccess != stat ) {	\
+		cerr << msg;				\
+		return MS::kFailure;		\
+		}
 
 class HRBFSkinCluster : public MPxSkinCluster // can we subclass the dual quaternion one in Maya?
 {
@@ -77,20 +85,65 @@ public:
                            const MMatrix& mat,
                            unsigned int multiIndex);
 
+	MStatus skinDQ(MMatrixArray&  transforms,
+				   int numTransforms,
+				   MArrayDataHandle& weightListHandle,
+				   MItGeometry&   iter);
+
+	MStatus skinLB(MMatrixArray&  transforms,
+				   int numTransforms,
+				   MArrayDataHandle& weightListHandle,
+				   MItGeometry&   iter);
+
     static const MTypeId id;
+
+	static MObject rebuildHRBF; // for signalling that the user wants the HRBFs recomputed
+	int rebuildHRBFStatus; // for the program to check if it has rebuilt HRBFs or not
+	static MObject useDQ; // for switching between DQ and LBS skinning
 };
 
 const MTypeId HRBFSkinCluster::id( 0x00080030 );
 
+MObject HRBFSkinCluster::rebuildHRBF;
+MObject HRBFSkinCluster::useDQ;
 
 void* HRBFSkinCluster::creator()
 {
-    return new HRBFSkinCluster();
+	HRBFSkinCluster *cluster = new HRBFSkinCluster();
+	cluster->rebuildHRBFStatus = -1;
+	return cluster;
 }
 
+// add some additional inputs
 MStatus HRBFSkinCluster::initialize()
 {
-    return MStatus::kSuccess;
+	std::cout << "called initialize" << std::endl;
+	MFnNumericAttribute numAttr;
+
+	MStatus returnStatus;
+	HRBFSkinCluster::rebuildHRBF = numAttr.create("RebuildHRBF", "rbld", MFnNumericData::kInt,
+		1, &returnStatus);
+	McheckErr(returnStatus, "ERROR creating rbld attribute\n");
+	returnStatus = addAttribute(HRBFSkinCluster::rebuildHRBF);
+	McheckErr(returnStatus, "ERROR adding rbld attribute\n");
+
+	HRBFSkinCluster::useDQ = numAttr.create("UseDualQuaternions", "useDQ", MFnNumericData::kInt,
+		0, &returnStatus);
+	McheckErr(returnStatus, "ERROR creating useDQ attribute\n");
+	returnStatus = addAttribute(HRBFSkinCluster::useDQ);
+	McheckErr(returnStatus, "ERROR adding useDQ attribute\n");
+
+	// set up affects
+	returnStatus = attributeAffects(HRBFSkinCluster::rebuildHRBF,
+		HRBFSkinCluster::outputGeom);
+	McheckErr(returnStatus, "ERROR in attributeAffects with rebuildHRBF\n");
+
+	// set up affects
+	returnStatus = attributeAffects(HRBFSkinCluster::useDQ,
+		HRBFSkinCluster::outputGeom);
+	McheckErr(returnStatus, "ERROR in attributeAffects with useDQ\n");
+
+    return returnStatus;
 }
 
 
@@ -112,18 +165,6 @@ MQuaternion getTranslationQuaternion(MMatrix &tf, MQuaternion &rotation) {
 	// extract translation quaternion from TF
 	// Translation is LITERALLY the right hand column
 	// http://www.cis.upenn.edu/~cis277/16sp/lectures/2_4_Skeletons_and_Skinning.pdf
-	/*
-	double x = tf(3, 0);
-	double y = tf(3, 1);
-	double z = tf(3, 2);
-	double qx = rotation[0];
-	double qy = rotation[1];
-	double qz = rotation[2];
-	double qw = rotation[3];
-	double w = 0.5 * (x * qx - y * qy - z * qz);
-	double i = 0.5 * (x * qw + y * qz - z * qy);
-	double j = 0.5 * (-x * qz + y * qw + z * qx);
-	double k = 0.5 * (x * qy - y * qx + z * qw); */
 
 	double t[3];
 	t[0] = tf(3, 0);
@@ -146,22 +187,9 @@ MQuaternion getTranslationQuaternion(MMatrix &tf, MQuaternion &rotation) {
 MMatrix makeDQMatrix(MQuaternion &rot, MQuaternion &trans) {
 	double matAsArr[4][4];
 	rot.asMatrix().get(matAsArr);
-	// http://www.cis.upenn.edu/~cis277/16sp/lectures/2_4_Skeletons_and_Skinning.pdf
-	// set up translation
-	//double i = trans[0];
-	//double j = trans[1];
-	//double k = trans[2];
-	//double w = trans[3];
-	//double qx = rot[0];
-	//double qy = rot[1];
-	//double qz = rot[2];
-	//double qw = rot[3];
 
 	double length = sqrt(rot[0] * rot[0] + rot[1] * rot[1] + rot[2] * rot[2] + rot[3] * rot[3]);
 
-	//matAsArr[3][0] = 2.0 * (w * qx + i * qw - j * qz + k * qy) / length;
-	//matAsArr[3][1] = 2.0 * (w * qy + i * qz - j * qw + k * qx) / length;
-	//matAsArr[3][2] = 2.0 * (w * qz + i * qy - j * qx + k * qw) / length;
 	double t[4];
 	double q0[4];
 	t[0] = trans[3];
@@ -199,10 +227,22 @@ HRBFSkinCluster::deform( MDataBlock& block,
 //
 //
 {
-	//MPxSkinCluster::deform(block, iter, m, multiIndex);
+	MStatus returnStatus;
 
-    MStatus returnStatus;
-    
+	// get HRBF status
+	MDataHandle HRBFstatusData = block.inputValue(rebuildHRBF, &returnStatus);
+	McheckErr(returnStatus, "Error getting rebuildHRBF handle\n");
+	int rebuildHRBFStatusNow = HRBFstatusData.asInt();
+
+	// get skinning type
+	MDataHandle useDQData = block.inputValue(useDQ, &returnStatus);
+	McheckErr(returnStatus, "Error getting useDQ handle\n");
+	int useDQNow = useDQData.asInt();
+
+	// get envelope because why not
+	MDataHandle envData = block.inputValue(envelope, &returnStatus);
+	float env = envData.asFloat();
+
 	// get the influence transforms
 	//
 	MArrayDataHandle transformsHandle = block.inputArrayValue( matrix ); // tell block what we want
@@ -225,7 +265,40 @@ HRBFSkinCluster::deform( MDataBlock& block,
 		}
 	}
 
-#if DUALQUATERNION
+	MArrayDataHandle weightListHandle = block.inputArrayValue(weightList);
+	if (weightListHandle.elementCount() == 0) {
+		// no weights - nothing to do
+		std::cout << "no weights!" << std::endl;
+		rebuildHRBFStatus = rebuildHRBFStatusNow - 1; // HRBFs will need to rebuilt no matter what
+		return MS::kSuccess;
+	}
+
+	// perform traditional skinning
+	if (useDQNow != 0) {
+		returnStatus = skinDQ(transforms, numTransforms, weightListHandle, iter);
+	}
+	else {
+		returnStatus = skinLB(transforms, numTransforms, weightListHandle, iter);
+	}
+
+	// check if HRBFs need to be recomputed
+	if (rebuildHRBFStatus != rebuildHRBFStatusNow) {
+		std::cout << "instructed to rebuild HRBFs" << std::endl;
+		rebuildHRBFStatus = rebuildHRBFStatusNow;
+	}
+
+	// do HRBF corrections
+
+	return returnStatus;
+}
+
+MStatus
+HRBFSkinCluster::skinDQ(MMatrixArray&  transforms,
+						int numTransforms,
+						MArrayDataHandle& weightListHandle,
+						MItGeometry& iter) {
+	MStatus returnStatus;
+
 	// compute dual quaternions. we're storing them as a parallel array.
 	std::vector<MQuaternion> tQuaternions(numTransforms); // translation quaterions
 	std::vector<MQuaternion> rQuaternions(numTransforms); // rotation quaternions
@@ -239,25 +312,17 @@ HRBFSkinCluster::deform( MDataBlock& block,
 		std::cout << "tran quaternion " << i << " is: " << tQuaternions.at(i) << std::endl;
 #endif
 	}
-#endif
 
-	MArrayDataHandle weightListHandle = block.inputArrayValue( weightList );
-	if ( weightListHandle.elementCount() == 0 ) {
-		// no weights - nothing to do
-		return MS::kSuccess;
-	}
-
-#if DUALQUATERNION
 	MQuaternion rBlend; // blended rotation quaternions
 	MQuaternion tBlend; // blended translation quaternions
 	MQuaternion scaleMe; // Maya's quaternion scaling is in-place
 	double weight;
-#endif
 
-    // Iterate through each point in the geometry.
-    //
-    for ( ; !iter.isDone(); iter.next()) {
-        MPoint pt = iter.position();
+
+	// Iterate through each point in the geometry.
+	//
+	for (; !iter.isDone(); iter.next()) {
+		MPoint pt = iter.position();
 		MPoint skinned;
 
 		rBlend = MQuaternion(); // reset
@@ -266,37 +331,56 @@ HRBFSkinCluster::deform( MDataBlock& block,
 		tBlend[3] = 0.0;
 
 		// get the weights for this point
-		MArrayDataHandle weightsHandle = weightListHandle.inputValue().child( weights );
+		MArrayDataHandle weightsHandle = weightListHandle.inputValue().child(weights);
 
 		// compute the skinning
-		for ( int i=0; i<numTransforms; ++i ) {
-			if ( MS::kSuccess == weightsHandle.jumpToElement( i ) ) {
-#if DUALQUATERNION
-
+		for (int i = 0; i<numTransforms; ++i) {
+			if (MS::kSuccess == weightsHandle.jumpToElement(i)) {
 				weight = weightsHandle.inputValue().asDouble();
 				scaleMe = rQuaternions.at(i);
 				rBlend = rBlend + scaleMe.scaleIt(weight);
 				scaleMe = tQuaternions.at(i);
 				tBlend = tBlend + scaleMe.scaleIt(weight);
-#else
-				skinned += ( pt * transforms[i] ) * weightsHandle.inputValue().asDouble();
-#endif
 			}
 		}
 
-#if DUALQUATERNION
-		//MMatrix dqMatrix = makeDQMatrix(rBlend.normalizeIt(), tBlend.normalizeIt());
 		MMatrix dqMatrix = makeDQMatrix(rBlend.normalizeIt(), tBlend);
 		skinned = pt * dqMatrix;
-#endif
 
 		// Set the final position.
-		iter.setPosition( skinned );
+		iter.setPosition(skinned);
 
 		// advance the weight list handle
 		weightListHandle.next();
-    }
-    return returnStatus;
+	}
+	return returnStatus;
+}
+MStatus HRBFSkinCluster::skinLB(MMatrixArray&  transforms,
+								int numTransforms,
+								MArrayDataHandle& weightListHandle,
+								MItGeometry& iter) {
+	MStatus returnStatus;
+
+	// Iterate through each point in the geometry.
+	//
+	for (; !iter.isDone(); iter.next()) {
+		MPoint pt = iter.position();
+		MPoint skinned;
+		// get the weights for this point
+		MArrayDataHandle weightsHandle = weightListHandle.inputValue().child(weights);
+		// compute the skinning
+		for (int i = 0; i<numTransforms; ++i) {
+			if (MS::kSuccess == weightsHandle.jumpToElement(i)) {
+				skinned += (pt * transforms[i]) * weightsHandle.inputValue().asDouble();
+			}
+		}
+
+		// Set the final position.
+		iter.setPosition(skinned);
+		// advance the weight list handle
+		weightListHandle.next();
+	}
+	return returnStatus;
 }
 
 
@@ -308,6 +392,7 @@ MStatus initializePlugin( MObject obj )
     MStatus result;
 
     MFnPlugin plugin( obj, PLUGIN_COMPANY, "3.0", "Any");
+	std::cout << "initializing HRBF plugin" << std::endl;
     result = plugin.registerNode(
         "HRBFSkinCluster" ,
         HRBFSkinCluster::id ,
