@@ -1,6 +1,12 @@
 set(SOURCE_FILES 
  "HRBFNode.cpp"
  "HRBFNode.h"
+ "MayaDualQuaternion.cpp"
+ "MayaDualQuaternion.h"
+ "MayaHRBFManager.cpp"
+ "MayaHRBFManager.h"
+ "MayaHRBF.cpp"
+ "MayaHRBF.h" 
 )
 
 find_package(Maya REQUIRED)
