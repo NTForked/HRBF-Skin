@@ -47,12 +47,16 @@ proc bind_HRBFskin() {
     
     // get a joint
     string $rootJointName;
+    // walk over everything selected
+    // select a root joint
     for ($i = 0; $i < size($selectedNodes); $i++) {
         if (`objectType $selectedNodes[$i]` == "joint") {
             $rootJointName = $selectedNodes[$i];
             break;
         }
     }
+    
+    //TODO: verify that what we have is the root
     
     // get the other joints
     string $otherJoints[] = `listRelatives -ad $rootJointName`;

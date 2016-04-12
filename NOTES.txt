@@ -1,3 +1,44 @@
+04/12/2016 - finishing getting HRBF what it needs
+-needs joint hierarchy information
+	-we can extract relative rotation from matrices
+	-we just need to know which matrices go together
+	-this likely has to be passed in by MEL
+	-we CAN descendants -> get children in MEL
+		-so should enforce selecting root. can use list relatives parent to enforce this
+		-TODO: write a small hierarchy traversal function in MEL
+
+			listRelatives -c "LeftLeg";
+
+		-this will help us pass hierarchy information to C++
+	-how to include this as an attribute though?
+		-can we just do this as an attrib array of some kind?
+		-clever indexing?
+		-could we just do an int array parallel to the matrices?
+		-and each item in the array indicates index of parent?
+		-we'd be able to get parent transform, which realistically is all we need
+
+-ensure that the iterator over points always goes in the same order
+	-we'll run some tests
+
+04/08/2016 - getting started with HRBF and HRBF manager
+-question: how do we make sure each matrix matches to the right HRBF?
+	-do the matrices always come out in the same order?
+	-appears to be the case
+	-skinning pseudocode:
+		-get all the matrices from an iterator
+		-look at each point
+			-each point has a list of weights -> also in an interator
+			-the weights are ordered the same as the matrices from the iterator
+		-hopefully this doesn't change in between calls or we'll have some major trouble
+-question: how do we extact bone positions from matrices?
+	-the transformation itself is an ID
+	-the inverse TF matrix is probably where we should do this
+-question: how do we extract parent/child info from the matrices?
+	-well... there are some "bones" that don't actually have a "next joint" at all
+		-see the fingertips
+	-so it'd probably be more robust to do this with sampling
+	-compute a sampling of joints that are furthest away and use that as a cap
+
 04/06/2016 - fixing DQ, adding HRBF setup
 -things to try to fix DQ:
 	-try transposing each set of matrices individually -> I think the translation one is right
