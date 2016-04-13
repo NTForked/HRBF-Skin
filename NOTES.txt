@@ -5,7 +5,7 @@
 	-this likely has to be passed in by MEL
 	-we CAN descendants -> get children in MEL
 		-so should enforce selecting root. can use list relatives parent to enforce this
-		-TODO: write a small hierarchy traversal function in MEL
+		-TODO: write a small hierarchy traversal function in MEL [done]
 
 			listRelatives -c "LeftLeg";
 
@@ -15,11 +15,11 @@
 		-clever indexing?
 		-could we just do an int array parallel to the matrices?
 		-and each item in the array indicates index of parent?
-		-we'd be able to get parent transform, which realistically is all we need
+		-we'd be able to get parent transform, which realistically is all we need to compute a full hierarchy in the CPP
 
 	-ok. lesson learned: maya does NOT like you messing with the order of matrices in bind
 	-the skin weights for each vertex must be laid out in the same way as listRelatives gets us the matrices -> BOOOOOO
-	-need to compute indices of parents based off this ordering! TODO!
+	-need to compute indices of parents based off this ordering! TODO! [DONE]
 
 -ensure that the iterator over points always goes in the same order
 	-we'll run some tests

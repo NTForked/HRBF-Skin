@@ -198,7 +198,7 @@ MStatus HRBFSkinCluster::skinLB(MMatrixArray&  transforms,
 		MPoint skinned;
 		// get the weights for this point
 		MArrayDataHandle weightsHandle = weightListHandle.inputValue().child(weights);
-		// compute the skinning
+		// compute the skinning -> TODO: what's the order that the weights are given in?
 		for (int i = 0; i<numTransforms; ++i) {
 			if (MS::kSuccess == weightsHandle.jumpToElement(i)) {
 				skinned += (pt * transforms[i]) * weightsHandle.inputValue().asDouble();
