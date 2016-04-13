@@ -62,6 +62,8 @@ skinCluster -e -maximumInfluences 3 HRBFSkinCluster1;	// forces computation of d
 #include <vector>
 #include <maya/MFnNumericData.h>
 #include <maya/MFnNumericAttribute.h>
+//#include <maya/MFnTypedAttribute.h>
+#include <maya/MFnCompoundAttribute.h>
 
 #include "MayaDualQuaternion.h"
 
@@ -102,9 +104,12 @@ public:
 	static MObject rebuildHRBF; // for signalling that the user wants the HRBFs recomputed
 	int rebuildHRBFStatus; // for the program to check if it has rebuilt HRBFs or not
 	static MObject useDQ; // for switching between DQ and LBS skinning
+
+	static MObject jointParentIdcs; // for getting skeleton hierarchy information into the node
 };
 
 const MTypeId HRBFSkinCluster::id(0x00080030);
 
 MObject HRBFSkinCluster::rebuildHRBF;
 MObject HRBFSkinCluster::useDQ;
+MObject HRBFSkinCluster::jointParentIdcs;

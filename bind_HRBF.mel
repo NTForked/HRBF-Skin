@@ -4,7 +4,7 @@
 // 3) skin by running bind_HRBFskin(). MAKE SURE YOUR SKELETON POSE MATCHES MESH POSE
 // 4) reimport weights
 
-proc connectJointCluster( string $jointName, int $i, string $skinClusterName )
+proc connectJointCluster( string $jointName, int $i, string $skinClusterName, int $parent_idx )
 {
     /* not sure what this does, but it breaks some kinds of binds and the attribute
        seems to be off for binding to FBX import skeletons anyway.
@@ -23,6 +23,7 @@ proc connectJointCluster( string $jointName, int $i, string $skinClusterName )
     connectAttr ($jointName+".objectColorRGB") ($skinClusterName + ".influenceColor["+$i+"]");
 	float $m[] = `getAttr ($jointName+".wim")`;
 	setAttr ($skinClusterName + ".bindPreMatrix["+$i+"]") -type "matrix" $m[0] $m[1] $m[2] $m[3] $m[4] $m[5] $m[6] $m[7] $m[8] $m[9] $m[10] $m[11] $m[12] $m[13] $m[14] $m[15];
+    setAttr ($skinClusterName + ".parentJointIDCS["+$i+"]") $parent_idx;
 }
 
 proc get_skeleton_hierarchy(string $jointNames[], int $parentIndices[]) {
@@ -107,8 +108,10 @@ proc bind_HRBFskin() {
 
     // link up
     for ($i = 0; $i < $numJoints; $i++) {
-        connectJointCluster( $jointsHierarchy[$i], $i, $skinClusterName );
+        connectJointCluster( $jointsHierarchy[$i], $i, $skinClusterName, $parentIndices[$i]);
     }
+
+    //setAttr ($skinClusterName + ".ParentJointIDCS") -type "Int32Array" $parentIndices;
 }
 
 

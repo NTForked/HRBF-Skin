@@ -12,6 +12,8 @@ MStatus HRBFSkinCluster::initialize()
 {
 	std::cout << "called initialize" << std::endl;
 	MFnNumericAttribute numAttr;
+	//MFnTypedAttribute typedAttr;
+	//MFnCompoundAttribute cmpdAttr;
 
 	MStatus returnStatus;
 	HRBFSkinCluster::rebuildHRBF = numAttr.create("RebuildHRBF", "rbld", MFnNumericData::kInt,
@@ -26,15 +28,33 @@ MStatus HRBFSkinCluster::initialize()
 	returnStatus = addAttribute(HRBFSkinCluster::useDQ);
 	McheckErr(returnStatus, "ERROR adding useDQ attribute\n");
 
+	//HRBFSkinCluster::jointParentIdcs = typedAttr.create("parentJointIDCS", "pJIDCS", MFnNumericData::kIntArray,
+	//	&returnStatus);
+	//McheckErr(returnStatus, "ERROR creating pIDCS attribute\n");
+	//returnStatus = addAttribute(HRBFSkinCluster::jointParentIdcs);
+	//McheckErr(returnStatus, "ERROR adding pIDCS attribute\n");
+
+	// http://download.autodesk.com/us/maya/2011help/API/weight_list_node_8cpp-example.html#a15
+	HRBFSkinCluster::jointParentIdcs = numAttr.create("parentJointIDCS", "pJIDCS", MFnNumericData::kInt,
+		0, &returnStatus);
+	McheckErr(returnStatus, "ERROR creating pIDCS attribute\n");
+	numAttr.setArray(true);
+	//cmpdAttr.setReadable(true);
+	returnStatus = addAttribute(HRBFSkinCluster::jointParentIdcs);
+	McheckErr(returnStatus, "ERROR adding pIDCS attribute\n");
+
 	// set up affects
 	returnStatus = attributeAffects(HRBFSkinCluster::rebuildHRBF,
 		HRBFSkinCluster::outputGeom);
 	McheckErr(returnStatus, "ERROR in attributeAffects with rebuildHRBF\n");
 
-	// set up affects
 	returnStatus = attributeAffects(HRBFSkinCluster::useDQ,
 		HRBFSkinCluster::outputGeom);
 	McheckErr(returnStatus, "ERROR in attributeAffects with useDQ\n");
+
+	returnStatus = attributeAffects(HRBFSkinCluster::jointParentIdcs,
+		HRBFSkinCluster::outputGeom);
+	McheckErr(returnStatus, "ERROR in attributeAffects with jointParentIdcs\n");
 
     return returnStatus;
 }
@@ -45,7 +65,7 @@ HRBFSkinCluster::deform( MDataBlock& block,
                       const MMatrix& m,
                       unsigned int multiIndex)
 //
-// Method: deform
+// Method: deform1
 //
 // Description:   Deforms the point with a simple smooth skinning algorithm
 //
@@ -115,6 +135,20 @@ HRBFSkinCluster::deform( MDataBlock& block,
 	if (rebuildHRBFStatus != rebuildHRBFStatusNow) {
 		std::cout << "instructed to rebuild HRBFs" << std::endl;
 		rebuildHRBFStatus = rebuildHRBFStatusNow;
+
+		MArrayDataHandle parentIDCsHandle = block.inputArrayValue(jointParentIdcs); // tell block what we want
+		std::vector<int> jointParentIndices(numTransforms);
+		if (parentIDCsHandle.elementCount() > 0) {
+			for (int i = 0; i<numTransforms; ++i) {
+				jointParentIndices[i] = parentIDCsHandle.inputValue().asInt();
+				parentIDCsHandle.next();
+			}
+		}
+		// debug
+		std::cout << "got joint hierarchy info! it's:" << std::endl;
+		for (int i = 0; i < numTransforms; ++i) {
+			std::cout << i << ": " << jointParentIndices[i] << std::endl;
+		}
 	}
 
 	// do HRBF corrections
@@ -196,7 +230,7 @@ MStatus HRBFSkinCluster::skinLB(MMatrixArray&  transforms,
 	for (; !iter.isDone(); iter.next()) {
 		MPoint pt = iter.position();
 		MPoint skinned;
-		// get the weights for this point
+		// get the weights for this point -> must be dependent on the iterator somehow
 		MArrayDataHandle weightsHandle = weightListHandle.inputValue().child(weights);
 		// compute the skinning -> TODO: what's the order that the weights are given in?
 		for (int i = 0; i<numTransforms; ++i) {

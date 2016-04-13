@@ -1,3 +1,8 @@
+04/13/2016 - attach hierarchy information to CPP
+-do all the attrs stuff -> [DONE] -> that took forever -> that was awful -> ahhhh
+-build hierarchy of HRBFs
+
+
 04/12/2016 - finishing getting HRBF what it needs
 -needs joint hierarchy information
 	-we can extract relative rotation from matrices
