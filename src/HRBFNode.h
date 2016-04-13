@@ -1,3 +1,6 @@
+#ifndef HRBFNODE_H
+#define HRBFNODE_H
+
 //-
 // ==========================================================================
 // Copyright 2015 Autodesk, Inc.  All rights reserved.
@@ -62,10 +65,11 @@ skinCluster -e -maximumInfluences 3 HRBFSkinCluster1;	// forces computation of d
 #include <vector>
 #include <maya/MFnNumericData.h>
 #include <maya/MFnNumericAttribute.h>
-//#include <maya/MFnTypedAttribute.h>
 #include <maya/MFnCompoundAttribute.h>
 
 #include "MayaDualQuaternion.h"
+#include "MayaHRBFManager.h"
+#include "MayaHRBF.h"
 
 #define DUALQUATERNION 1
 #define DEBUG_PRINTS 0
@@ -113,3 +117,5 @@ const MTypeId HRBFSkinCluster::id(0x00080030);
 MObject HRBFSkinCluster::rebuildHRBF;
 MObject HRBFSkinCluster::useDQ;
 MObject HRBFSkinCluster::jointParentIdcs;
+
+#endif
