@@ -17,6 +17,10 @@
 		-and each item in the array indicates index of parent?
 		-we'd be able to get parent transform, which realistically is all we need
 
+	-ok. lesson learned: maya does NOT like you messing with the order of matrices in bind
+	-the skin weights for each vertex must be laid out in the same way as listRelatives gets us the matrices -> BOOOOOO
+	-need to compute indices of parents based off this ordering! TODO!
+
 -ensure that the iterator over points always goes in the same order
 	-we'll run some tests
 

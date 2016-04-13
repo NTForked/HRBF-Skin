@@ -17,10 +17,47 @@ proc connectJointCluster( string $jointName, int $i, string $skinClusterName )
     
     connectAttr ($jointName+".liw") ($skinClusterName + ".lockWeights["+$i+"]"); */
     
+    print("linking " + $jointName + "\n");
+
     connectAttr ($jointName+".worldMatrix[0]") ($skinClusterName + ".matrix["+$i+"]");
     connectAttr ($jointName+".objectColorRGB") ($skinClusterName + ".influenceColor["+$i+"]");
 	float $m[] = `getAttr ($jointName+".wim")`;
 	setAttr ($skinClusterName + ".bindPreMatrix["+$i+"]") -type "matrix" $m[0] $m[1] $m[2] $m[3] $m[4] $m[5] $m[6] $m[7] $m[8] $m[9] $m[10] $m[11] $m[12] $m[13] $m[14] $m[15];
+}
+
+proc get_skeleton_hierarchy(string $rootName, string $jointNames[],
+    int $parentIndices[]) {
+    /*
+    Assume orderedJoints and parentIndices are already the right size
+    */
+
+    // make sure we've selected the root
+    string $rels[] = `listRelatives -p $rootName`;
+    if (size($rels) > 0) {
+        print("ERROR! PLEASE SELECT THE ROOT OF THE SKELETON!");
+        return;
+    }
+
+
+    // perform a BFS traversal
+    int $numJoints = size(`listRelatives -ad $rootName`) + 1;    
+    int $freeIdx = 0;
+    int $parentIdx = 0;
+    $jointNames[$freeIdx] = $rootName;
+    $parentIndices[$freeIdx] = -1; // root
+    $freeIdx++;
+
+    while($freeIdx < $numJoints) {
+        print($jointNames[$parentIdx]);
+        string $children[] = `listRelatives -c $jointNames[$parentIdx]`;
+        int $numChildren = size($children);
+        for ($i = 0; $i < $numChildren; $i++) {
+            $jointNames[$freeIdx] = $children[$i];
+            $parentIndices[$freeIdx] = $parentIdx;
+            $freeIdx++;
+        }
+        $parentIdx++;
+    }
 }
 
 proc bind_HRBFskin() {
@@ -55,17 +92,43 @@ proc bind_HRBFskin() {
             break;
         }
     }
-    
-    //TODO: verify that what we have is the root
-    
+
+
+    // get joints in a hierarchy
+    string $jointsHierarchy[];
+    int $parentIndices[];
+
+    get_skeleton_hierarchy($rootJointName, $jointsHierarchy, $parentIndices);
+
+    int $numJoints = size($jointsHierarchy);
+
+    // debug
+    print($jointsHierarchy[0] + "\n");
+    for ($k = 0; $k < $numJoints; $k++) {
+        print($k + ": " + $jointsHierarchy[$k] + " " + $parentIndices[$k] + "\n");
+    }
+
+    // TODO: recompute indices to match anormal listing
+
+/*
+    // connect to the skin cluster
+    for ($j = 0; $j < $numJoints; $j++) {
+        connectJointCluster( $jointsHierarchy[$j], $j + 1, $skinClusterName );
+    } */
+
+
+
+    /*
+        
     // get the other joints
+
     string $otherJoints[] = `listRelatives -ad $rootJointName`;
     
     // bind the joints to the skin cluster
     connectJointCluster( $rootJointName, 0 , $skinClusterName);
     for ($i = 0; $i < size($otherJoints); $i++) {
         connectJointCluster( $otherJoints[$i], $i + 1, $skinClusterName );
-    }
+    } */
 }
 
 
