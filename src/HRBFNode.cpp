@@ -232,7 +232,7 @@ MStatus HRBFSkinCluster::skinLB(MMatrixArray&  transforms,
 		MPoint skinned;
 		// get the weights for this point -> must be dependent on the iterator somehow
 		MArrayDataHandle weightsHandle = weightListHandle.inputValue().child(weights);
-		// compute the skinning -> TODO: what's the order that the weights are given in?
+		// compute the skinning -> TODO: what's the order that the weights are given in? Appears to just be maya list relatives order.
 		for (int i = 0; i<numTransforms; ++i) {
 			if (MS::kSuccess == weightsHandle.jumpToElement(i)) {
 				skinned += (pt * transforms[i]) * weightsHandle.inputValue().asDouble();

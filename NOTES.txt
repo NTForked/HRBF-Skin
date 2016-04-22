@@ -1,3 +1,10 @@
+04/21/2016
+-observed that when exporting skin weights from HRBF and when exporting from default skincluster, order is different
+-HRBF exported skin weights are listed in order that they were bound to the HRBF
+-ongoing question: why doesn't this screw LBS over so severely?
+-TODO: try adding to skin cluster in DFS order
+-if this doesn't work, seriously time to move on to the HRBF part
+
 04/13/2016 - attach hierarchy information to CPP
 -do all the attrs stuff -> [DONE] -> that took forever -> that was awful -> ahhhh
 -build hierarchy of HRBFs
