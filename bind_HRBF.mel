@@ -48,6 +48,60 @@ proc get_skeleton_hierarchy(string $jointNames[], int $parentIndices[]) {
     }
 }
 
+proc get_joints_DF(string $rootName, string $jointNames[]) {
+    /* test with:
+
+    string $rootName = "Hips";
+    string $dft[];
+    get_joints_DF($rootName, $dft);
+
+    for ($i = 0; $i < size($dft); $i++) {
+        print($dft[$i] + "\n");
+    }
+    */
+
+
+    // check to make sure we have the root
+    string $rels[] = `listRelatives -p $rootName`;
+    if (size($rels) > 0) {
+        print("ERROR! PLEASE SELECT THE ROOT OF THE SKELETON!");
+        return;
+    }
+    // perform DF traversal using a fake stack
+    int $numJoints = size(`listRelatives -ad $rootName`);
+
+    string $dfStack[];
+    int $stackTop = 1;
+    $dfStack[0] = $rootName;
+    int $jointNamesIDX = 0;
+    while ($jointNamesIDX < $numJoints) {
+        // pop off the stack
+        string $popped = $dfStack[$stackTop - 1];
+        $stackTop--;
+
+        // stick on the explored queue
+        $jointNames[$jointNamesIDX] = $popped;
+        $jointNamesIDX++;
+
+        // get children
+        string $children[] = `listRelatives -c $popped`;
+        int $numChildren = size($children);
+        // btw we need to reverse the children, or this doesn't match Maya's DFT
+        string $swap;
+        for ($i = 0; $i < $numChildren / 2; $i++) {
+            $swap = $children[$i];
+            $children[$i] = $children[$numChildren - 1 - $i];
+            $children[$numChildren - 1 - $i] = $swap;
+        }
+
+        // push em on the stack
+        for ($i = 0; $i < $numChildren; $i++) {
+            $dfStack[$stackTop] = $children[$i];
+            $stackTop++;
+        }
+    }
+}
+
 proc bind_HRBFskin() {
     string $selectedNodes[] = `ls -sl`; // get selected nodes
     print($selectedNodes); // debug
@@ -69,7 +123,30 @@ proc bind_HRBFskin() {
         print("ERROR! PLEASE SELECT THE ROOT OF THE SKELETON!");
         return;
     }
-    
+
+    // get joints in a hierarchy
+    string $jointsHierarchy[];
+    int $parentIndices[];
+
+    /*
+    $jointsHierarchy[0] = $rootJointName;
+    string $otherJoints[] = `listRelatives -ad $rootJointName`;
+    int $numJoints = size($otherJoints) + 1;
+    for ($i = 0; $i < $numJoints - 1; $i++) {
+        $jointsHierarchy[$i + 1] = $otherJoints[$i];
+    } */
+
+    get_joints_DF($rootJointName, $jointsHierarchy);
+    int $numJoints = size($jointsHierarchy);
+
+    get_skeleton_hierarchy($jointsHierarchy, $parentIndices);
+
+    // debug
+    //print($jointsHierarchy[0] + "\n");
+    for ($i = 0; $i < $numJoints; $i++) {
+        print($i + ": " + $jointsHierarchy[$i] + " " + $parentIndices[$i] + "\n");
+    }
+
     // get the mesh
     string $meshName;
     for ($i = 0; $i < size($selectedNodes); $i++) {
@@ -84,27 +161,8 @@ proc bind_HRBFskin() {
     
     // make the skin node
     string $clusterStr[] = `deformer -type "HRBFSkinCluster"`;
-	print($clusterStr);
+    print($clusterStr);
     string $skinClusterName = $clusterStr[0];
-
-    // get joints in a hierarchy
-    string $jointsHierarchy[];
-    int $parentIndices[];
-
-    $jointsHierarchy[0] = $rootJointName;
-    string $otherJoints[] = `listRelatives -ad $rootJointName`;
-    int $numJoints = size($otherJoints) + 1;
-    for ($i = 0; $i < $numJoints - 1; $i++) {
-        $jointsHierarchy[$i + 1] = $otherJoints[$i];
-    }
-
-    get_skeleton_hierarchy($jointsHierarchy, $parentIndices);
-
-    // debug
-    //print($jointsHierarchy[0] + "\n");
-    for ($i = 0; $i < $numJoints; $i++) {
-        print($i + ": " + $jointsHierarchy[$i] + " " + $parentIndices[$i] + "\n");
-    }
 
     // link up
     for ($i = 0; $i < $numJoints; $i++) {
