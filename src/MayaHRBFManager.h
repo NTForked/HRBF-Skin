@@ -13,7 +13,11 @@ class MayaHRBFManager {
 public:
 	MayaHRBFManager(std::vector<int> jointHierarchy);
 	~MayaHRBFManager();
-	void clear();
+	void recompute();
+
+	// members
+	std::vector<MayaHRBF*> m_HRBFs; // in the initial DF order
+	int m_numJoints;
 };
 
 #endif

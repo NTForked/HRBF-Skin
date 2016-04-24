@@ -7,7 +7,12 @@
 
 class MayaHRBF {
 public:
-	MayaHRBF(MMatrix &tf);
+	MayaHRBF();
+	~MayaHRBF();
+
+	// members
+	MayaHRBF* m_parent;
+	std::vector<MayaHRBF*> m_children;
 };
 
 #endif

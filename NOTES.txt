@@ -1,3 +1,20 @@
+04/22/2016
+-ok so we should look into the 3D texture HRBF thing
+-3D arrays again
+-we want to compute an AABB of the HRBF
+-ideally we want a resolution such that no two points are in the same cell
+-we'll use the average distance between vertices in the iterator?
+-alternative: make sure the outermost layer of the AABB has ~enough cells to store all the vertices
+-this should be "close" theoretically and may be sufficient. we can double the count if it's bad.
+	-faces of a a x b x c voxel grid: a x b x 2 + b x c * 2 + a x c * 2
+	-we can set a, b, c to the ratio of the AABB
+	-then we just do a x b x 2 + b x c * 2 + a x c * 2 * M = # vertices
+	-and then we use M and the ratios to compute the resolution
+-although the paper just uses 32x32x32 with trilinear interpolation -> lol
+-ok let's do that instead
+-the paper also builds the compositions on the fly -> bigger resolution, 128x128x128
+-ok
+
 04/21/2016
 -observed that when exporting skin weights from HRBF and when exporting from default skincluster, order is different
 -HRBF exported skin weights are listed in order that they were bound to the HRBF
