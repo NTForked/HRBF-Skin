@@ -1,3 +1,32 @@
+04/25/2016
+3D grid and HRBF
+-grid should handle trinilinear interpolation
+-we'll set up a separate project for now to develop and test this
+-should also handle outputting to python plotting
+
+-HRBF should handle transformation into grid coordinates
+-also needs to determine grid bounds from maya point sampling
+-also needs to handle filling in the grid
+-also needs to handle generating bone end points
+
+-HRBF manager should handle transforming sample points in the global grid into HRBF local space
+-this for sampling in HRBF grids to build global grid
+-some kind of inverse transform, I think -> run inverse of transform on pt?
+-since we're essentially transforming each "bone"
+
+Figuring out the bones
+-we NEED to figure out what the matrices we get actually are
+-seem to be rotation -> translation matrices of the bones themselves
+-and the bind-pre determines how far each vertex is from the bone point
+-go look at Adam's slides?
+
+-right. skinning works like this:
+	-bind pre matrix translates bone to center and unrotates it
+	-then the new matrix rotates it and translates it to wherever it needs to go
+	-which is why we do tf * bind pre * point for skinning
+-so for querying and building individual grids, we just have to bind pre matrix for every query point
+-to rigid transform, just inverse the current joint TF and multiply point by that before querying
+
 04/24/2016
 -workflow stages:
 1) generate HRBFs
@@ -7,8 +36,31 @@
 	-also includes re-parameterization
 	-see Vaillant for this (included below)
 	-see hrbf_core.h for how to set up the matrix and use eigen
+
+	-each HRBF should store 5 grids:
+		-reparamed field function val
+		-x, y, z of gradient
+		-gradient length
+
+	-HRBF manager only needs to store 4
+
+	-grid should handle trilinear interpolation!
+	-grid should also handle text file output
+
+	Tuesday: grid, generate HRBFs
+	Wednesday: blend and project
+
 2) blend HRBFs -> done per frame
-	-union operator
+	-make sure individual HRBF classes have ability to transform point to local coords, get val
+	-we'll need a dedicated 3D grid class that will be used for everything
+	-should include trilinear interpolation too, really, but... at this point...
+	-will be handled internally with GLM
+	-the HRBF manager will be responsible for converting between MVector and glm when projecting
+
+	-union operator instead of the gradient based interpolated smooth/union blend for now
+	-but how do you union gradient fields? max(length(grad), length(grad))?
+	-well... theoretically, grads point to the surface with varying strength
+	-stronger further from the surface, right? ok this makes sense, actually. draw it out if you don't believe!
 3) project along composed HRBF -> this is done per-frame
 
 // from vaillant distance_field.inl in source code
