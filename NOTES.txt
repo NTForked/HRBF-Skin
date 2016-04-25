@@ -1,3 +1,58 @@
+04/24/2016
+-workflow stages:
+1) generate HRBFs
+	-compute HRBFs from points and normals -> include smoothness culling
+	-we'll also sample down to 50 pts using just random sampling instead of poisson disk -> after smoothness culling
+	-compute gradient and field values at each cell in the grid -> check by plotting in python
+	-also includes re-parameterization
+	-see Vaillant for this (included below)
+	-see hrbf_core.h for how to set up the matrix and use eigen
+2) blend HRBFs -> done per frame
+	-union operator
+3) project along composed HRBF -> this is done per-frame
+
+// from vaillant distance_field.inl in source code
+inline float to_compact_poly_c2(float f, float radius)
+{
+    if(f < -radius)
+        return 1.f;
+    else if(f > radius)
+        return 0.f;
+    else
+    {
+        // (-3/16)*(f/radius)^5+(5/8)*(f/radius)^3-(15/16)*(f/radius) + 1/2
+        const float fact   = (f/radius);
+        const float fact2  = fact  * fact;
+        const float fact4  = fact2 * fact2;
+        return (-3.f/16.f)*fact4*fact + (5.f/8.f)*fact2*fact - (15.f/16.f)*fact + 1.f/2.f;
+    }
+
+}
++
+// -----------------------------------------------------------------------------
+
+IF_CUDA_DEVICE_HOST
+inline void grad_to_compact_poly_c2(float f, float r, Vec3_cu& grad)
+{
+    if(f < -r || f > r)
+        grad = Vec3_cu(0.f,0.f,0.f);
+    else
+    {
+        // (-15/(16r))*(f/r)^4 + (15/(8*r))*(f/r)^2 - (15/(16r))
+        const float fact  = f/r;
+        const float fact2 = fact*fact;
+        const float fact4 = fact2*fact2;
+        const float tmp   = (-15.f/(16.f*r));
+        const float scale = tmp*fact4 + (15.f/(8.f*r))*fact2 + tmp;
+        grad = grad * scale;
+    }
+}
+
+HRBF_CORE_NOTES
+-see at the bottom for where he declares the matrix, alpha and beta arrays
+-he does this thing where he typedefs different Eigen matriz sizes to another type name
+-maybe we should do this too? for better readability?
+
 04/22/2016
 -ok so we should look into the 3D texture HRBF thing
 -3D arrays again
