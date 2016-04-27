@@ -235,18 +235,27 @@ void MayaHRBF::printHRBFSamplingDebug() {
 
 	MPoint sample;
 	MPoint norDisp;
+	debugSplat.clear(-1.0f);
 	for (int i = 0; i < numSamples; i++) {
 		sample = m_posSamples[i];
 		norDisp = sample + m_norSamples[i] * norDispMag;
-		debugSplat.setByCoordinate(sample.x, sample.y, sample.z, 1.0);
-		debugSplat.setByCoordinate(norDisp.x, norDisp.y, norDisp.z, 2.0);
+		if (!debugSplat.setByCoordinate(sample.x, sample.y, sample.z, 1.0)) {
+			std::cout << "splat fail\n";
+		}
+		if (!debugSplat.setByCoordinate(norDisp.x, norDisp.y, norDisp.z, 2.0)) {
+			std::cout << "splat fail\n";
+		}
 	}
 
 	for (int i = 0; i < numExtrems; i++) {
 		sample = m_posExtrem[i];
 		norDisp = sample + m_norExtrem[i] * norDispMag;
-		debugSplat.setByCoordinate(sample.x, sample.y, sample.z, 3.0);
-		debugSplat.setByCoordinate(norDisp.x, norDisp.y, norDisp.z, 4.0);
+		if (!debugSplat.setByCoordinate(sample.x, sample.y, sample.z, 3.0)) {
+			std::cout << "splat fail\n";
+		}
+		if (!debugSplat.setByCoordinate(norDisp.x, norDisp.y, norDisp.z, 4.0)) {
+			std::cout << "splat fail\n";
+		}
 	}
 
 	// export the debug grid

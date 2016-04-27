@@ -200,11 +200,14 @@ bool FloatGrid3D::trilinear(float x, float y, float z, float &ret) {
 void FloatGrid3D::exportToDebugString(std::string nodeName) {
 	std::cout << nodeName.c_str() << "\n";
 	float fx, fy, fz;
+	float val;
 	for (int x = 0; x < m_res.x; x++) {
 		for (int y = 0; y < m_res.y; y++) {
 			for (int z = 0; z < m_res.z; z++) {
 				idxToCoord(x, y, z, fx, fy, fz);
-				std::cout << fx << " " << fy << " " << fz << " " << getCell(x, y, z) << "\n";
+				val = getCell(x, y, z);
+				if (val > 0.0f)
+					std::cout << fx << " " << fy << " " << fz << " " << val << "\n";
 			}
 		}
 	}
