@@ -111,7 +111,7 @@ public:
 	static MObject rebuildHRBF; // for signalling that the user wants the HRBFs recomputed
 	int rebuildHRBFStatus; // for the program to check if it has rebuilt HRBFs or not
 	static MObject exportHRBF; // for exporting HRBF information to text files
-	int exportHRBFStatus; // for the program to check if it should export or not
+	std::string exportHRBFStatus; // for the program to check if it should export or not
 
 	static MObject useDQ; // for switching between DQ and LBS skinning
 	static MObject useHRBF; // for toggling HRBF correction on and off

@@ -10,8 +10,15 @@
 	-see the paper
 
 	-test up to sampling with debug in Maya/python.
-		-write a python script to visualize
 		-just splat the samples on the grid and view to see if it looks right?
+
+		-exporting is turning out to be a mess
+		-maya doesn't like it when you try to export files from a maya C++ plugin
+		-we'll have to do it through the debugger. ok.
+		-in the meantime, let's change things: it's a bad idea to always export all the HRBFs
+		-TODO: change HRBF to export a named joint instead of all of them [done]
+		-write a python script to visualize
+
 	-finish HRBF build -> matrix solve, fill grids
 	-test HRBF build by having Maya fart out HRBFs in python readable
 

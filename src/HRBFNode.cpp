@@ -5,7 +5,7 @@ void* HRBFSkinCluster::creator()
 	HRBFSkinCluster *cluster = new HRBFSkinCluster();
 	// a little big of HRBF setup:
 	cluster->rebuildHRBFStatus = -1;
-	cluster->exportHRBFStatus = 0; // don't export normally
+	cluster->exportHRBFStatus = ""; // don't export normally
 	return cluster;
 }
 
@@ -25,8 +25,8 @@ MStatus HRBFSkinCluster::initialize()
 	returnStatus = addAttribute(HRBFSkinCluster::rebuildHRBF);
 	McheckErr(returnStatus, "ERROR adding rbld attribute\n");
 
-	HRBFSkinCluster::exportHRBF = numAttr.create("ExportHRBF", "exprt", MFnNumericData::kInt,
-		0, &returnStatus);
+	HRBFSkinCluster::exportHRBF = typedAttr.create("ExportHRBF", "exprt", MFnNumericData::kString,
+		&returnStatus);
 	McheckErr(returnStatus, "ERROR creating rbld attribute\n");
 	returnStatus = addAttribute(HRBFSkinCluster::exportHRBF);
 	McheckErr(returnStatus, "ERROR adding rbld attribute\n");
@@ -117,7 +117,7 @@ HRBFSkinCluster::deform( MDataBlock& block,
 	// get HRBF export status
 	MDataHandle HRBFExportData = block.inputValue(exportHRBF, &returnStatus);
 	McheckErr(returnStatus, "Error getting exportHRBF handle\n");
-	int exportHRBFStatusNow = HRBFExportData.asInt();
+	std::string exportHRBFStatusNow = HRBFExportData.asString().asChar();
 
 	// get skinning type
 	MDataHandle useDQData = block.inputValue(useDQ, &returnStatus);
@@ -168,10 +168,10 @@ HRBFSkinCluster::deform( MDataBlock& block,
 
 	// print HRBF if requested
 	if (exportHRBFStatusNow != exportHRBFStatus) {
-		std::cout << "instructed to export HRBFs" << std::endl;
+		std::cout << "instructed to export HRBF: " << exportHRBFStatusNow.c_str() << std::endl;
 		exportHRBFStatus = exportHRBFStatusNow;
 		// TODO: handle exporting HRBFs to the text file format
-		hrbfMan.debugOutputToFile();
+		hrbfMan.debugOutputToFile(exportHRBFStatus);
 	}
 
 

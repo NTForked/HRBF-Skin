@@ -35,7 +35,7 @@ public:
 
 	void correct(); // TODO: fill out and implement
 
-	void debugOutputToFile();
+	void debugOutputToFile(std::string nodeName);
 };
 
 #endif

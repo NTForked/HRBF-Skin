@@ -250,6 +250,6 @@ void MayaHRBF::printHRBFSamplingDebug() {
 	}
 
 	// export the debug grid
-	std::cout << "exporting " << m_name.c_str() << std::endl;
-	debugSplat.exportToFile("C:\debug_sampling_" + m_name + ".txt");
+	//std::cout << "exporting " << m_name.c_str() << std::endl;
+	debugSplat.exportToDebugString(m_name);
 }

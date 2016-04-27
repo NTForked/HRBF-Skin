@@ -73,8 +73,11 @@ void MayaHRBFManager::buldHRBFs(std::vector<int> jointHierarchy, std::vector<std
 
 }
 
-void MayaHRBFManager::debugOutputToFile() {
+void MayaHRBFManager::debugOutputToFile(std::string nodeName) {
 	for (int i = 0; i < m_numJoints; i++) {
-		m_HRBFs[i]->printHRBFSamplingDebug();
+		if (m_HRBFs[i]->m_name == nodeName) {
+			m_HRBFs[i]->printHRBFSamplingDebug();
+			break;
+		}
 	}
 }

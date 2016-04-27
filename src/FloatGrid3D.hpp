@@ -40,7 +40,8 @@ public:
 	bool setByCoordinate(float x, float y, float z, float val); // access cell by coordinate
 	bool trilinear(float x, float y, float z, float &ret); // trilinear interpolation
 
-	void exportToFile(std::string filename);
+	// maya doesn't seem to let plugins export files, so we'll just have to view it in the debugger
+	void exportToDebugString(std::string nodeName);
 };
 
 #endif

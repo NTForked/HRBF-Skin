@@ -197,17 +197,16 @@ bool FloatGrid3D::trilinear(float x, float y, float z, float &ret) {
 	return true;
 }
 
-void FloatGrid3D::exportToFile(std::string filename) {
-	std::ofstream file;
-	file.open(filename);
+void FloatGrid3D::exportToDebugString(std::string nodeName) {
+	std::cout << nodeName.c_str() << "\n";
 	float fx, fy, fz;
 	for (int x = 0; x < m_res.x; x++) {
 		for (int y = 0; y < m_res.y; y++) {
 			for (int z = 0; z < m_res.z; z++) {
 				idxToCoord(x, y, z, fx, fy, fz);
-				file << fx << " " << fy << " " << fz << " " << getCell(x, y, z) << "\n";
+				std::cout << fx << " " << fy << " " << fz << " " << getCell(x, y, z) << "\n";
 			}
 		}
 	}
-	file.close();
+	return;
 }
