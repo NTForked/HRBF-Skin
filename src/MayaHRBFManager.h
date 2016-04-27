@@ -11,7 +11,6 @@
 #include <maya/MItGeometry.h>
 
 #define HRBF_COMPRES 128
-#define WEIGHT_CUTOFF 0.4
 
 /******************************************************************************
 Implements a skeleton of HRBF nodes.

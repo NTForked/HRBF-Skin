@@ -49,19 +49,44 @@ void MayaHRBFManager::buldHRBFs(std::vector<int> jointHierarchy, std::vector<std
 	/***** sample points for the HRBFs *****/
 	// sample the geometry and deposit the appropriate normals, etc. into each HRBF.
 	// Iterate through each point in the geometry.
+	std::vector<int> hrbfCandidates;
+	std::vector<double> candidateWeights;
+	MPoint pt;
+	MVector nor;
+	int numCandidates;
+	double bestWeight;
+	int bestHRBF;
+
 	for (; !iter.isDone(); iter.next()) {
-		MPoint pt = iter.position();
-		MVector nor = iter.normal();
+		pt = iter.position();
+		nor = iter.normal();
+		hrbfCandidates.clear();
+		candidateWeights.clear();
+		numCandidates = 0;
 
 		// get the weights for this point
 		MArrayDataHandle weightsHandle = weightListHandle.inputValue().child(weights);
 		// compute the skinning -> TODO: what's the order that the weights are given in? Appears to just be maya list relatives order.
 		for (int i = 0; i< m_numJoints; ++i) {
+			// give this vertex to the HRBF that is weighted most heavily towards
+
 			if (MS::kSuccess == weightsHandle.jumpToElement(i)) {
-				if (weightsHandle.inputValue().asDouble() > WEIGHT_CUTOFF)
-					m_HRBFs[i]->addVertex(pt, nor);
+				candidateWeights.push_back(weightsHandle.inputValue().asDouble());
+				hrbfCandidates.push_back(i);
+				numCandidates++;
 			}
 		}
+
+		// figure out which HRBF to add this vertex to
+		bestWeight = -HUGE_VAL;
+		bestHRBF = -1;
+		for (int i = 0; i < numCandidates; i++) {
+			if (candidateWeights[i] > bestWeight) {
+				bestWeight = candidateWeights[i];
+				bestHRBF = hrbfCandidates[i];
+			}
+		}
+		m_HRBFs[bestHRBF]->addVertex(pt, nor);
 
 		// advance the weight list handle
 		weightListHandle.next();

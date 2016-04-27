@@ -199,10 +199,10 @@ HRBFSkinCluster::deform( MDataBlock& block,
 		}
 
 		// debug
-		std::cout << "got joint hierarchy info! it's:" << std::endl;
-		for (int i = 0; i < numTransforms; ++i) {
-			std::cout << i << ": " << jointNames[i].c_str() << " : " << jointParentIndices[i] << std::endl;
-		}
+		//std::cout << "got joint hierarchy info! it's:" << std::endl;
+		//for (int i = 0; i < numTransforms; ++i) {
+		//	std::cout << i << ": " << jointNames[i].c_str() << " : " << jointParentIndices[i] << std::endl;
+		//}
 		hrbfMan.buldHRBFs(jointParentIndices, jointNames, bindTFs, weightListHandle, iter, weights);
 
 		weightListHandle.jumpToElement(0); // reset this, it's an iterator. trust me.
