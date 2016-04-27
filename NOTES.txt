@@ -1,17 +1,25 @@
 04/27/2016
 4) catch up
-	-must do some refactoring: every "bone" only has two extremeties, not a tree of children
-	-we must establish a "bone" for every edge in the skeleton graph!
-	
-	-test what we have so far using debug mode and Maya
+	-must do some cleanup for the bone extremity points and vertex culling
+	-vertex culling probably has to be done per joint-joint pairs -> ok
+	-extremity closing samples: basically, need to add extremity points for every joint
+	-extremity points are computed from closest vertex to joint -> NOT the joint position itself! this fixes a lot of concerns.
+	-normal is aligned with bone direction
+	-so the current averaging approach should be ok in most cases, but could lead to very odd results... we'll just not add closing points for anything that isn't really an extremity
+	-"not really an extremity" -> "root" joint with multiple children
+	-see the paper
+
+	-test up to sampling with debug in Maya/python.
+		-write a python script to visualize
+		-just splat the samples on the grid and view to see if it's right?
 	-finish HRBF build -> matrix solve, fill grids
 	-test HRBF build by having Maya fart out HRBFs in python readable
-	-write a python script to visualize
 
 5) build the HRBF manager
 	-should handle building the global gradient on another 3D grid from compositions -> we're justing using MAX here
 	-this will make exporting relatively easy
 	-should manage all the new inverse TF transforms for querying the individual HRBFs
+	-should handle computing all isovalues to start with
 
 6) perform HRBF marching
 
