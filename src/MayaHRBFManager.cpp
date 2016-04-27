@@ -35,7 +35,7 @@ void MayaHRBFManager::buldHRBFs(std::vector<int> jointHierarchy, std::vector<std
 	int parentIDX;
 	for (int i = 0; i < m_numJoints; i++) {
 		parentIDX = jointHierarchy[i];
-		if (parentIDX > 0) {
+		if (parentIDX >= 0) {
 			m_HRBFs[i]->m_parent = m_HRBFs[parentIDX];
 			m_HRBFs[parentIDX]->m_children.push_back(m_HRBFs[i]);
 		}
@@ -46,7 +46,7 @@ void MayaHRBFManager::buldHRBFs(std::vector<int> jointHierarchy, std::vector<std
 		m_HRBFs[i]->setupBones();
 	}
 
-	/***** set up the actual HRBFs *****/
+	/***** sample points for the HRBFs *****/
 	// sample the geometry and deposit the appropriate normals, etc. into each HRBF.
 	// Iterate through each point in the geometry.
 	for (; !iter.isDone(); iter.next()) {
@@ -71,4 +71,10 @@ void MayaHRBFManager::buldHRBFs(std::vector<int> jointHierarchy, std::vector<std
 		m_HRBFs[i]->compute();
 	}
 
+}
+
+void MayaHRBFManager::debugOutputToFile() {
+	for (int i = 0; i < m_numJoints; i++) {
+		m_HRBFs[i]->printHRBFSamplingDebug();
+	}
 }

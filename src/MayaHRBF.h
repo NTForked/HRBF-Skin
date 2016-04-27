@@ -17,25 +17,35 @@ public:
 
 	void setupBones();
 	void addVertex(MPoint pos, MVector nor); // take vertex into local space. handle culling.
+	bool isExtremity();
+	void closeExtremities();
 	void compute();
 
+	void printHRBFSamplingDebug();
 	void printHRBF(); // TODO: implement!
 
 	// members
 	std::string m_name;
 	MayaHRBF* m_parent;
 	std::vector<MayaHRBF*> m_children;
-	std::vector<MPoint> m_positions;
-	std::vector<MVector> m_normals;
-
-	std::vector<MPoint> m_endPs;
-	std::vector<MVector> m_endNs;
-	MPoint m_bindPosLocal;
-	MVector m_bindNorLocal;
+	int m_numChildren;
 
 	MMatrix m_invBindTF;
 	MMatrix m_bindTF;
-	MPoint m_bindPosition; // world space
+
+	// samples from geometry
+	std::vector<MPoint> m_posSamples;
+	std::vector<MVector> m_norSamples;
+
+	// extremities
+	std::vector<MPoint> m_posExtrem;
+	std::vector<MVector> m_norExtrem;
+
+	// cache of bone positions for sample culling
+	std::vector<MPoint> m_jointPosLocals; // position of joint in local space
+	std::vector<MVector> m_jointDirLocals; // direction from this joint to given joint
+	MPoint m_jointPositionLocal; // this joint in local space
+	MPoint m_jointPositionWorld; // this joint in world space
 
 	FloatGrid3D *f_vals;
 	FloatGrid3D *f_gradX;

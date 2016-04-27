@@ -171,6 +171,7 @@ HRBFSkinCluster::deform( MDataBlock& block,
 		std::cout << "instructed to export HRBFs" << std::endl;
 		exportHRBFStatus = exportHRBFStatusNow;
 		// TODO: handle exporting HRBFs to the text file format
+		hrbfMan.debugOutputToFile();
 	}
 
 

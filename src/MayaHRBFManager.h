@@ -34,6 +34,8 @@ public:
 	void compose(); // TODO: implement
 
 	void correct(); // TODO: fill out and implement
+
+	void debugOutputToFile();
 };
 
 #endif

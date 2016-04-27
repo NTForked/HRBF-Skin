@@ -1,7 +1,7 @@
 04/27/2016
 4) catch up
 	-must do some cleanup for the bone extremity points and vertex culling
-	-vertex culling probably has to be done per joint-joint pairs -> ok
+	-vertex culling probably has to be done per joint-joint pairs -> ok [done]
 	-extremity closing samples: basically, need to add extremity points for every joint
 	-extremity points are computed from closest vertex to joint -> NOT the joint position itself! this fixes a lot of concerns.
 	-normal is aligned with bone direction
@@ -11,7 +11,7 @@
 
 	-test up to sampling with debug in Maya/python.
 		-write a python script to visualize
-		-just splat the samples on the grid and view to see if it's right?
+		-just splat the samples on the grid and view to see if it looks right?
 	-finish HRBF build -> matrix solve, fill grids
 	-test HRBF build by having Maya fart out HRBFs in python readable
 
