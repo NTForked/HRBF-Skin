@@ -58,7 +58,8 @@ void MayaHRBFManager::buldHRBFs(std::vector<int> jointHierarchy, std::vector<std
 		// compute the skinning -> TODO: what's the order that the weights are given in? Appears to just be maya list relatives order.
 		for (int i = 0; i< m_numJoints; ++i) {
 			if (MS::kSuccess == weightsHandle.jumpToElement(i)) {
-				m_HRBFs[i]->addVertex(pt, nor);
+				if (weightsHandle.inputValue().asDouble() > WEIGHT_CUTOFF)
+					m_HRBFs[i]->addVertex(pt, nor);
 			}
 		}
 
