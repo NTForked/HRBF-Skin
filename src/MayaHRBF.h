@@ -30,9 +30,8 @@ public:
 
 	std::vector<MPoint> m_endPs;
 	std::vector<MVector> m_endNs;
-	MVector m_boneLength;
-	double m_boneLengthSquared;
-	MPoint m_bindPositionLocal;
+	MPoint m_bindPosLocal;
+	MVector m_bindNorLocal;
 
 	MMatrix m_invBindTF;
 	MMatrix m_bindTF;

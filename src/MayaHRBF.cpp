@@ -8,7 +8,7 @@ MayaHRBF::MayaHRBF(std::string &name, MMatrix &invBindTF) {
 	m_bindPosition.x = m_bindTF(3, 0);
 	m_bindPosition.y = m_bindTF(3, 1);
 	m_bindPosition.z = m_bindTF(3, 2);
-	m_bindPositionLocal = invBindTF * m_bindPosition;
+	m_bindPosLocal = invBindTF * m_bindPosition;
 
 	f_vals = NULL;
 	f_gradX = NULL;
@@ -43,21 +43,18 @@ void MayaHRBF::setupBones() {
 		endPavg += endP;
 	}
 	// average the points to figure out what normal to use here.
+	// in the case that 
 	endP = m_bindPosition;
-	endN = (endPavg / (float)numChildren) - m_bindPosition;
-	m_boneLength = endN;
-	m_boneLengthSquared = m_boneLength.x * m_boneLength.x + 
-		m_boneLength.y * m_boneLength.y + m_boneLength.z * m_boneLength.z;
-	endN.normalize();
-	m_endPs.push_back(m_invBindTF * endP);
-	m_endNs.push_back(m_invBindTF * endN);
+	m_bindNorLocal = m_bindPosition - (endPavg / (float)numChildren);
+	m_bindNorLocal.normalize();
 }
 
 void MayaHRBF::addVertex(MPoint pos, MVector nor) {
 	// take pos and normal into local coordinates of this bone
 	MPoint posL = m_invBindTF * pos;
 
-	/***** cull lousy points, samples too close together (equation 2). *****/
+	/***** cull lousy points, samples too close to a joint (equation 2). *****/
+	// TODO: cull for all extremities?
 	// presumably maya knows this is a dot
 	double eq2 = (posL - m_bindPositionLocal) * m_boneLength / m_boneLengthSquared;
 

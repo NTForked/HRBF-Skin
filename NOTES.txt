@@ -1,5 +1,8 @@
 04/27/2016
 4) catch up
+	-must do some refactoring: every "bone" only has two extremeties, not a tree of children
+	-we must establish a "bone" for every edge in the skeleton graph!
+	
 	-test what we have so far using debug mode and Maya
 	-finish HRBF build -> matrix solve, fill grids
 	-test HRBF build by having Maya fart out HRBFs in python readable

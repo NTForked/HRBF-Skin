@@ -41,7 +41,7 @@ void MayaHRBFManager::buldHRBFs(std::vector<int> jointHierarchy, std::vector<std
 		}
 	}
 
-	// set up bony points for all the HRBFs. needed for culling, so do this before adding points.
+	// set up bony points for all the HRBFs. needed for ctl point culling, so do this before adding points.
 	for (int i = 0; i < m_numJoints; i++) {
 		m_HRBFs[i]->setupBones();
 	}
@@ -68,7 +68,7 @@ void MayaHRBFManager::buldHRBFs(std::vector<int> jointHierarchy, std::vector<std
 
 	/***** set up each individual HRBF *****/
 	for (int i = 0; i < m_numJoints; i++) {
-		m_HRBFs[i]->setup();
+		m_HRBFs[i]->compute();
 	}
 
 }
