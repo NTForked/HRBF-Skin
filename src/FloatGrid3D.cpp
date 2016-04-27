@@ -21,6 +21,16 @@ FloatGrid3D::~FloatGrid3D() {
 	return;
 }
 
+void FloatGrid3D::resizeAABB(float minX, float minY, float minZ,
+	float maxX, float maxY, float maxZ) {
+
+	m_min = glm::vec3(minX, minY, minZ);
+	m_max = glm::vec3(maxX, maxY, maxZ);
+	m_cellWidth.x = (maxX - minX) / (float)m_res.x;
+	m_cellWidth.y = (maxY - minY) / (float)m_res.y;
+	m_cellWidth.z = (maxZ - minZ) / (float)m_res.z;
+}
+
 int FloatGrid3D::threeDto1D(int x, int y, int z) {
 
 	// out of bounds? return something indicative.

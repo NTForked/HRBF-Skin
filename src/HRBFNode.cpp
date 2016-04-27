@@ -3,6 +3,7 @@
 void* HRBFSkinCluster::creator()
 {
 	HRBFSkinCluster *cluster = new HRBFSkinCluster();
+	// a little big of HRBF setup:
 	cluster->rebuildHRBFStatus = -1;
 	return cluster;
 }
@@ -11,6 +12,7 @@ void* HRBFSkinCluster::creator()
 MStatus HRBFSkinCluster::initialize()
 {
 	std::cout << "called initialize" << std::endl;
+
 	MFnNumericAttribute numAttr;
 	//MFnTypedAttribute typedAttr;
 	//MFnCompoundAttribute cmpdAttr;
@@ -83,6 +85,11 @@ HRBFSkinCluster::deform( MDataBlock& block,
 	MDataHandle HRBFstatusData = block.inputValue(rebuildHRBF, &returnStatus);
 	McheckErr(returnStatus, "Error getting rebuildHRBF handle\n");
 	int rebuildHRBFStatusNow = HRBFstatusData.asInt();
+	// handle signaling to the rest of deform that HRBFs must be rebuild
+	bool signalRebuildHRBF = false;
+	signalRebuildHRBF = (rebuildHRBFStatus != rebuildHRBFStatusNow);
+	MMatrixArray worldTFs; // store just the world transforms in here.
+	MMatrixArray bindTFs; // store just the bind transforms in here.
 
 	// get skinning type
 	MDataHandle useDQData = block.inputValue(useDQ, &returnStatus);
@@ -102,7 +109,9 @@ HRBFSkinCluster::deform( MDataBlock& block,
 	}
 	MMatrixArray transforms; // fetch transform matrices -> actual joint matrices
 	for ( int i=0; i<numTransforms; ++i ) {
-		transforms.append( MFnMatrixData( transformsHandle.inputValue().data() ).matrix() );
+		MMatrix worldTF = MFnMatrixData(transformsHandle.inputValue().data()).matrix();
+		transforms.append(worldTF);
+		if (signalRebuildHRBF) worldTFs.append(worldTF);
 		transformsHandle.next();
 	}
 	// inclusive matrices inverse of the driving transform at time of bind
@@ -110,8 +119,10 @@ HRBFSkinCluster::deform( MDataBlock& block,
 	MArrayDataHandle bindHandle = block.inputArrayValue( bindPreMatrix ); // tell block what we want
 	if ( bindHandle.elementCount() > 0 ) {
 		for ( int i=0; i<numTransforms; ++i ) {
-			transforms[i] = MFnMatrixData( bindHandle.inputValue().data() ).matrix() * transforms[i];
+			MMatrix bind = MFnMatrixData(bindHandle.inputValue().data()).matrix();
+			transforms[i] = bind * transforms[i];
 			bindHandle.next();
+			if (signalRebuildHRBF) bindTFs.append(bind);
 		}
 	}
 
@@ -123,16 +134,8 @@ HRBFSkinCluster::deform( MDataBlock& block,
 		return MS::kSuccess;
 	}
 
-	// perform traditional skinning
-	if (useDQNow != 0) {
-		returnStatus = skinDQ(transforms, numTransforms, weightListHandle, iter);
-	}
-	else {
-		returnStatus = skinLB(transforms, numTransforms, weightListHandle, iter);
-	}
-
-	// check if HRBFs need to be recomputed
-	if (rebuildHRBFStatus != rebuildHRBFStatusNow) {
+	// rebuild HRBFs if needed
+	if (signalRebuildHRBF) {
 		std::cout << "instructed to rebuild HRBFs" << std::endl;
 		rebuildHRBFStatus = rebuildHRBFStatusNow;
 
@@ -145,14 +148,55 @@ HRBFSkinCluster::deform( MDataBlock& block,
 			}
 		}
 		// debug
-		std::cout << "got joint hierarchy info! it's:" << std::endl;
-		for (int i = 0; i < numTransforms; ++i) {
-			std::cout << i << ": " << jointParentIndices[i] << std::endl;
-		}
+		//std::cout << "got joint hierarchy info! it's:" << std::endl;
+		//for (int i = 0; i < numTransforms; ++i) {
+		//	std::cout << i << ": " << jointParentIndices[i] << std::endl;
+		//}
+		hrbfMan.buldHRBFs(jointParentIndices, worldTFs, bindTFs, weightListHandle, iter, weights);
+
+		weightListHandle.jumpToElement(0); // reset this, it's an iterator. trust me.
+		iter.reset(); // reset this iterator so we can go do normal skinning
+	}
+
+
+	// perform traditional skinning
+	if (useDQNow != 0) {
+		returnStatus = skinDQ(transforms, numTransforms, weightListHandle, iter);
+	}
+	else {
+		returnStatus = skinLB(transforms, numTransforms, weightListHandle, iter);
 	}
 
 	// do HRBF corrections
 
+	return returnStatus;
+}
+
+MStatus HRBFSkinCluster::skinLB(MMatrixArray&  transforms,
+	int numTransforms,
+	MArrayDataHandle& weightListHandle,
+	MItGeometry& iter) {
+	MStatus returnStatus;
+
+	// Iterate through each point in the geometry.
+	//
+	for (; !iter.isDone(); iter.next()) {
+		MPoint pt = iter.position();
+		MPoint skinned;
+		// get the weights for this point -> must be dependent on the iterator somehow
+		MArrayDataHandle weightsHandle = weightListHandle.inputValue().child(weights);
+		// compute the skinning -> TODO: what's the order that the weights are given in? Appears to just be maya list relatives order.
+		for (int i = 0; i<numTransforms; ++i) {
+			if (MS::kSuccess == weightsHandle.jumpToElement(i)) {
+				skinned += (pt * transforms[i]) * weightsHandle.inputValue().asDouble();
+			}
+		}
+
+		// Set the final position.
+		iter.setPosition(skinned);
+		// advance the weight list handle
+		weightListHandle.next();
+	}
 	return returnStatus;
 }
 
@@ -214,33 +258,6 @@ HRBFSkinCluster::skinDQ(MMatrixArray&  transforms,
 		// Set the final position.
 		iter.setPosition(skinned);
 
-		// advance the weight list handle
-		weightListHandle.next();
-	}
-	return returnStatus;
-}
-MStatus HRBFSkinCluster::skinLB(MMatrixArray&  transforms,
-								int numTransforms,
-								MArrayDataHandle& weightListHandle,
-								MItGeometry& iter) {
-	MStatus returnStatus;
-
-	// Iterate through each point in the geometry.
-	//
-	for (; !iter.isDone(); iter.next()) {
-		MPoint pt = iter.position();
-		MPoint skinned;
-		// get the weights for this point -> must be dependent on the iterator somehow
-		MArrayDataHandle weightsHandle = weightListHandle.inputValue().child(weights);
-		// compute the skinning -> TODO: what's the order that the weights are given in? Appears to just be maya list relatives order.
-		for (int i = 0; i<numTransforms; ++i) {
-			if (MS::kSuccess == weightsHandle.jumpToElement(i)) {
-				skinned += (pt * transforms[i]) * weightsHandle.inputValue().asDouble();
-			}
-		}
-
-		// Set the final position.
-		iter.setPosition(skinned);
 		// advance the weight list handle
 		weightListHandle.next();
 	}

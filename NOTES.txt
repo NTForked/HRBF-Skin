@@ -35,6 +35,26 @@ TOMORROW:
 
 6) perform HRBF marching
 
+HRBF Manager
+-role is to act as a mediator between the HRBFs and the plugin
+	-plugin will provide prebind matrix, positions/normals for each bone
+	-plugin will also provide order of positions for computing isovalues
+	-btw bind pre matrices don't ever change unless you change the bind pose
+		-and btw they aren't just the original tf matrix with some values flipped
+		-the order has changed too, which is why the translation isn't just the same thing negated
+	-meanwhile, the actual TF matrices maya provides have translation in real space -> great for bones!
+	-bind pre's -> just for building the initial HRBFs
+	-when we're composing we need to compute inverses of the TFs to get back to HRBF space -> np, maya gives this to us
+
+Notes on how weightsHandle and weightListHandle works
+-weights are stored sparsely, hence "if (MS::kSuccess == weightsHandle.jumpToElement(i))"
+-weightListHandle is a list of weightsHandles, more or less. MArrayDataHandle
+-the HRBF node has an MOBject "weights" that lets you get weightsHandles out of the weightListHandle
+-we can reset the weightListHandle using jumpToElement(0) -> seems ok.
+
+
+*******************************************************************************************************
+
 04/25/2016
 3D grid and HRBF
 -grid should handle trinilinear interpolation

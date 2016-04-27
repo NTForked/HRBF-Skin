@@ -12,6 +12,8 @@ public:
 		float minX, float minY, float minZ,
 		float maxX, float maxY, float maxZ);
 	~FloatGrid3D();
+	void resizeAABB(float minX, float minY, float minZ,
+		float maxX, float maxY, float maxZ);
 
 	// members
 	std::vector<float> m_cells;

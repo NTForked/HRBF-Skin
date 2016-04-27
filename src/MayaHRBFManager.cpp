@@ -1,6 +1,28 @@
 #include "MayaHRBFManager.h"
 
-MayaHRBFManager::MayaHRBFManager(std::vector<int> jointHierarchy) {
+MayaHRBFManager::MayaHRBFManager() {
+
+}
+
+MayaHRBFManager::~MayaHRBFManager() {
+	// wipe whatever used to be in the hierarchy
+	for (int i = 0; i < m_numJoints; i++) {
+		if (m_HRBFs.at(i) != NULL)
+			delete m_HRBFs.at(i);
+	}
+	m_HRBFs.clear();
+}
+
+void MayaHRBFManager::buldHRBFs(std::vector<int> jointHierarchy, 
+	MMatrixArray &transforms, MMatrixArray &binds,
+	MArrayDataHandle& weightListHandle, MItGeometry& iter, MObject &weights) {
+	// wipe whatever used to be in the hierarchy
+	for (int i = 0; i < m_numJoints; i++) {
+		if (m_HRBFs.at(i) != NULL)
+			delete m_HRBFs.at(i);
+	}
+	m_HRBFs.clear();
+
 	m_numJoints = jointHierarchy.size();
 	// go ahead and make a bunch of empty HRBFs
 	// in the same order that matrices are expected to be provided
@@ -18,8 +40,6 @@ MayaHRBFManager::MayaHRBFManager(std::vector<int> jointHierarchy) {
 			m_HRBFs[parentIDX]->m_children.push_back(m_HRBFs[i]);
 		}
 	}
-}
 
-MayaHRBFManager::~MayaHRBFManager() {
-
+	// set up the actual HRBFs
 }

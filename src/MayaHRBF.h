@@ -3,6 +3,7 @@
 
 #include <maya/MVector.h>
 #include <maya/MMatrix.h>
+#include "FloatGrid3D.hpp"
 #include <vector>
 
 class MayaHRBF {

@@ -103,6 +103,8 @@ public:
 		MArrayDataHandle& weightListHandle,
 		MItGeometry&   iter);
 
+	MayaHRBFManager hrbfMan;
+
 	static const MTypeId id;
 
 	static MObject rebuildHRBF; // for signalling that the user wants the HRBFs recomputed

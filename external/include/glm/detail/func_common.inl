@@ -538,9 +538,7 @@ namespace detail
 		return tmp * tmp * (static_cast<T>(3) - static_cast<T>(2) * tmp);
 	}
 
-#	if GLM_HAS_CXX11_STL
-		using std::isnan;
-#	else
+
 		template <typename genType> 
 		GLM_FUNC_QUALIFIER bool isnan(genType x)
 		{
@@ -562,7 +560,6 @@ namespace detail
 				return std::isnan(x);
 #			endif
 		}
-#	endif
 
 	template <typename T, precision P, template <typename, precision> class vecType>
 	GLM_FUNC_QUALIFIER vecType<bool, P> isnan(vecType<T, P> const & x)
