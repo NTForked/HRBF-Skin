@@ -8,10 +8,11 @@
 
 class MayaHRBF {
 public:
-	MayaHRBF();
+	MayaHRBF(std::string &name);
 	~MayaHRBF();
 
 	// members
+	std::string m_name;
 	MayaHRBF* m_parent;
 	std::vector<MayaHRBF*> m_children;
 };

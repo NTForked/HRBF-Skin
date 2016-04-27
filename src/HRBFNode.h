@@ -63,9 +63,10 @@ skinCluster -e -maximumInfluences 3 HRBFSkinCluster1;	// forces computation of d
 #include <maya/MQuaternion.h>
 
 #include <vector>
+
 #include <maya/MFnNumericData.h>
 #include <maya/MFnNumericAttribute.h>
-#include <maya/MFnCompoundAttribute.h>
+#include <maya/MFnTypedAttribute.h>
 
 #include "MayaDualQuaternion.h"
 #include "MayaHRBFManager.h"
@@ -112,6 +113,7 @@ public:
 	static MObject useDQ; // for switching between DQ and LBS skinning
 
 	static MObject jointParentIdcs; // for getting skeleton hierarchy information into the node
+	static MObject jointNames; // for getting joint names. useful for debugging and printing.
 };
 
 const MTypeId HRBFSkinCluster::id(0x00080030);
@@ -119,5 +121,6 @@ const MTypeId HRBFSkinCluster::id(0x00080030);
 MObject HRBFSkinCluster::rebuildHRBF;
 MObject HRBFSkinCluster::useDQ;
 MObject HRBFSkinCluster::jointParentIdcs;
+MObject HRBFSkinCluster::jointNames;
 
 #endif

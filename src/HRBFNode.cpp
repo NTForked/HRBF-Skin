@@ -14,7 +14,7 @@ MStatus HRBFSkinCluster::initialize()
 	std::cout << "called initialize" << std::endl;
 
 	MFnNumericAttribute numAttr;
-	//MFnTypedAttribute typedAttr;
+	MFnTypedAttribute typedAttr;
 	//MFnCompoundAttribute cmpdAttr;
 
 	MStatus returnStatus;
@@ -30,20 +30,22 @@ MStatus HRBFSkinCluster::initialize()
 	returnStatus = addAttribute(HRBFSkinCluster::useDQ);
 	McheckErr(returnStatus, "ERROR adding useDQ attribute\n");
 
-	//HRBFSkinCluster::jointParentIdcs = typedAttr.create("parentJointIDCS", "pJIDCS", MFnNumericData::kIntArray,
-	//	&returnStatus);
-	//McheckErr(returnStatus, "ERROR creating pIDCS attribute\n");
-	//returnStatus = addAttribute(HRBFSkinCluster::jointParentIdcs);
-	//McheckErr(returnStatus, "ERROR adding pIDCS attribute\n");
-
+	// hierarchy information
 	// http://download.autodesk.com/us/maya/2011help/API/weight_list_node_8cpp-example.html#a15
 	HRBFSkinCluster::jointParentIdcs = numAttr.create("parentJointIDCS", "pJIDCS", MFnNumericData::kInt,
 		0, &returnStatus);
 	McheckErr(returnStatus, "ERROR creating pIDCS attribute\n");
 	numAttr.setArray(true);
-	//cmpdAttr.setReadable(true);
 	returnStatus = addAttribute(HRBFSkinCluster::jointParentIdcs);
 	McheckErr(returnStatus, "ERROR adding pIDCS attribute\n");
+
+	// joint names
+	HRBFSkinCluster::jointNames = typedAttr.create("jointNames", "jNms", MFnData::kString,
+		&returnStatus);
+	McheckErr(returnStatus, "ERROR creating pIDCS attribute\n");
+	typedAttr.setArray(true);
+	returnStatus = addAttribute(HRBFSkinCluster::jointNames);
+	McheckErr(returnStatus, "ERROR adding jNms attribute\n");
 
 	// set up affects
 	returnStatus = attributeAffects(HRBFSkinCluster::rebuildHRBF,
@@ -147,12 +149,22 @@ HRBFSkinCluster::deform( MDataBlock& block,
 				parentIDCsHandle.next();
 			}
 		}
+
+		MArrayDataHandle jointNamesHandle = block.inputArrayValue(jointNames); // tell block what we want
+		std::vector<std::string> jointNames(numTransforms);
+		if (jointNamesHandle.elementCount() > 0) {
+			for (int i = 0; i<numTransforms; ++i) {
+				jointNames[i] = jointNamesHandle.inputValue().asString().asChar();
+				jointNamesHandle.next();
+			}
+		}
+
 		// debug
-		//std::cout << "got joint hierarchy info! it's:" << std::endl;
-		//for (int i = 0; i < numTransforms; ++i) {
-		//	std::cout << i << ": " << jointParentIndices[i] << std::endl;
-		//}
-		hrbfMan.buldHRBFs(jointParentIndices, worldTFs, bindTFs, weightListHandle, iter, weights);
+		std::cout << "got joint hierarchy info! it's:" << std::endl;
+		for (int i = 0; i < numTransforms; ++i) {
+			std::cout << i << ": " << jointNames[i].c_str() << " : " << jointParentIndices[i] << std::endl;
+		}
+		hrbfMan.buldHRBFs(jointParentIndices, jointNames, worldTFs, bindTFs, weightListHandle, iter, weights);
 
 		weightListHandle.jumpToElement(0); // reset this, it's an iterator. trust me.
 		iter.reset(); // reset this iterator so we can go do normal skinning

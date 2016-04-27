@@ -24,6 +24,7 @@ proc connectJointCluster( string $jointName, int $i, string $skinClusterName, in
 	float $m[] = `getAttr ($jointName+".wim")`;
 	setAttr ($skinClusterName + ".bindPreMatrix["+$i+"]") -type "matrix" $m[0] $m[1] $m[2] $m[3] $m[4] $m[5] $m[6] $m[7] $m[8] $m[9] $m[10] $m[11] $m[12] $m[13] $m[14] $m[15];
     setAttr ($skinClusterName + ".parentJointIDCS["+$i+"]") $parent_idx;
+    setAttr ($skinClusterName + ".jointNames[" + $i + "]") -type "string" $jointName;
 }
 
 proc get_skeleton_hierarchy(string $jointNames[], int $parentIndices[]) {
@@ -141,7 +142,7 @@ proc bind_HRBFskin() {
 
     get_skeleton_hierarchy($jointsHierarchy, $parentIndices);
 
-    // debug
+    // debug1
     //print($jointsHierarchy[0] + "\n");
     for ($i = 0; $i < $numJoints; $i++) {
         print($i + ": " + $jointsHierarchy[$i] + " " + $parentIndices[$i] + "\n");

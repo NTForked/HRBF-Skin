@@ -13,7 +13,7 @@ MayaHRBFManager::~MayaHRBFManager() {
 	m_HRBFs.clear();
 }
 
-void MayaHRBFManager::buldHRBFs(std::vector<int> jointHierarchy, 
+void MayaHRBFManager::buldHRBFs(std::vector<int> jointHierarchy, std::vector<std::string> names,
 	MMatrixArray &transforms, MMatrixArray &binds,
 	MArrayDataHandle& weightListHandle, MItGeometry& iter, MObject &weights) {
 	// wipe whatever used to be in the hierarchy
@@ -27,7 +27,7 @@ void MayaHRBFManager::buldHRBFs(std::vector<int> jointHierarchy,
 	// go ahead and make a bunch of empty HRBFs
 	// in the same order that matrices are expected to be provided
 	for (int i = 0; i < m_numJoints; i++) {
-		MayaHRBF *hrbf = new MayaHRBF();
+		MayaHRBF *hrbf = new MayaHRBF(names.at(i));
 		m_HRBFs.push_back(hrbf);
 	}
 
