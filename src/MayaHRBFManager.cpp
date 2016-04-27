@@ -41,5 +41,34 @@ void MayaHRBFManager::buldHRBFs(std::vector<int> jointHierarchy, std::vector<std
 		}
 	}
 
-	// set up the actual HRBFs
+	// set up bony points for all the HRBFs. needed for culling, so do this before adding points.
+	for (int i = 0; i < m_numJoints; i++) {
+		m_HRBFs[i]->setupBones();
+	}
+
+	/***** set up the actual HRBFs *****/
+	// sample the geometry and deposit the appropriate normals, etc. into each HRBF.
+	// Iterate through each point in the geometry.
+	for (; !iter.isDone(); iter.next()) {
+		MPoint pt = iter.position();
+		MVector nor = iter.normal();
+
+		// get the weights for this point
+		MArrayDataHandle weightsHandle = weightListHandle.inputValue().child(weights);
+		// compute the skinning -> TODO: what's the order that the weights are given in? Appears to just be maya list relatives order.
+		for (int i = 0; i< m_numJoints; ++i) {
+			if (MS::kSuccess == weightsHandle.jumpToElement(i)) {
+				m_HRBFs[i]->addVertex(pt, nor);
+			}
+		}
+
+		// advance the weight list handle
+		weightListHandle.next();
+	}
+
+	/***** set up each individual HRBF *****/
+	for (int i = 0; i < m_numJoints; i++) {
+		m_HRBFs[i]->setup();
+	}
+
 }

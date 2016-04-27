@@ -7,7 +7,10 @@
 
 #include <maya/MMatrixArray.h>
 #include <maya/MArrayDataHandle.h>
+#include <maya/MDataHandle.h>
 #include <maya/MItGeometry.h>
+
+#define HRBF_COMPRES 128
 
 /******************************************************************************
 Implements a skeleton of HRBF nodes.
@@ -27,6 +30,10 @@ public:
 	std::vector<MayaHRBF*> m_HRBFs; // parallel to MMatrixArrays transforms and binds
 	std::vector<float> m_isoVals; // parallel to MItGeometry iter
 	int m_numJoints;
+
+	void compose(); // TODO: implement
+
+	void correct(); // TODO: fill out and implement
 };
 
 #endif
