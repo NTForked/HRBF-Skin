@@ -19,10 +19,10 @@
 	-should be equipped to set up the eigen and solve
 		-just follow vaillant for now. understand later.
 
-3) strap HRBF activation and debug output into Maya
-	-add a dummy control that switches HRBF projection on and off
-	-add a control that lets you dump out HRBFs every frame
-	-be able to name individual HRBFs? another attrib, a string array
+3) strap HRBF activation and debug output into Maya [done]
+	-add a dummy control that switches HRBF projection on and off [done]
+	-add a control that lets you dump out HRBFs every frame, ala the rebuild HRBF control [done]
+	-be able to name individual HRBFs? another attrib, a string array [done]
 
 TOMORROW:
 
@@ -43,6 +43,7 @@ HRBF Manager
 		-and btw they aren't just the original tf matrix with some values flipped
 		-the order has changed too, which is why the translation isn't just the same thing negated
 	-meanwhile, the actual TF matrices maya provides have translation in real space -> great for bones!
+		-get these from the bindTFs. otherwise the mats passed in might not be bind, and then we have trouble
 	-bind pre's -> just for building the initial HRBFs
 	-when we're composing we need to compute inverses of the TFs to get back to HRBF space -> np, maya gives this to us
 

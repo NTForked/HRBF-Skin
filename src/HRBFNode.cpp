@@ -5,6 +5,7 @@ void* HRBFSkinCluster::creator()
 	HRBFSkinCluster *cluster = new HRBFSkinCluster();
 	// a little big of HRBF setup:
 	cluster->rebuildHRBFStatus = -1;
+	cluster->exportHRBFStatus = 0; // don't export normally
 	return cluster;
 }
 
@@ -24,11 +25,23 @@ MStatus HRBFSkinCluster::initialize()
 	returnStatus = addAttribute(HRBFSkinCluster::rebuildHRBF);
 	McheckErr(returnStatus, "ERROR adding rbld attribute\n");
 
+	HRBFSkinCluster::exportHRBF = numAttr.create("ExportHRBF", "exprt", MFnNumericData::kInt,
+		0, &returnStatus);
+	McheckErr(returnStatus, "ERROR creating rbld attribute\n");
+	returnStatus = addAttribute(HRBFSkinCluster::exportHRBF);
+	McheckErr(returnStatus, "ERROR adding rbld attribute\n");
+
 	HRBFSkinCluster::useDQ = numAttr.create("UseDualQuaternions", "useDQ", MFnNumericData::kInt,
 		0, &returnStatus);
 	McheckErr(returnStatus, "ERROR creating useDQ attribute\n");
 	returnStatus = addAttribute(HRBFSkinCluster::useDQ);
 	McheckErr(returnStatus, "ERROR adding useDQ attribute\n");
+
+	HRBFSkinCluster::useHRBF = numAttr.create("UseHRBFCorrection", "useHRBF", MFnNumericData::kInt,
+		0, &returnStatus);
+	McheckErr(returnStatus, "ERROR creating useHRBF attribute\n");
+	returnStatus = addAttribute(HRBFSkinCluster::useHRBF);
+	McheckErr(returnStatus, "ERROR adding useHRBF attribute\n");
 
 	// hierarchy information
 	// http://download.autodesk.com/us/maya/2011help/API/weight_list_node_8cpp-example.html#a15
@@ -52,9 +65,17 @@ MStatus HRBFSkinCluster::initialize()
 		HRBFSkinCluster::outputGeom);
 	McheckErr(returnStatus, "ERROR in attributeAffects with rebuildHRBF\n");
 
+	returnStatus = attributeAffects(HRBFSkinCluster::exportHRBF,
+		HRBFSkinCluster::outputGeom);
+	McheckErr(returnStatus, "ERROR in attributeAffects with exportHRBF\n");
+
 	returnStatus = attributeAffects(HRBFSkinCluster::useDQ,
 		HRBFSkinCluster::outputGeom);
 	McheckErr(returnStatus, "ERROR in attributeAffects with useDQ\n");
+
+	returnStatus = attributeAffects(HRBFSkinCluster::useHRBF,
+		HRBFSkinCluster::outputGeom);
+	McheckErr(returnStatus, "ERROR in attributeAffects with useHRBF\n");
 
 	returnStatus = attributeAffects(HRBFSkinCluster::jointParentIdcs,
 		HRBFSkinCluster::outputGeom);
@@ -90,13 +111,23 @@ HRBFSkinCluster::deform( MDataBlock& block,
 	// handle signaling to the rest of deform that HRBFs must be rebuild
 	bool signalRebuildHRBF = false;
 	signalRebuildHRBF = (rebuildHRBFStatus != rebuildHRBFStatusNow);
-	MMatrixArray worldTFs; // store just the world transforms in here.
 	MMatrixArray bindTFs; // store just the bind transforms in here.
+
+
+	// get HRBF export status
+	MDataHandle HRBFExportData = block.inputValue(exportHRBF, &returnStatus);
+	McheckErr(returnStatus, "Error getting exportHRBF handle\n");
+	int exportHRBFStatusNow = HRBFExportData.asInt();
 
 	// get skinning type
 	MDataHandle useDQData = block.inputValue(useDQ, &returnStatus);
 	McheckErr(returnStatus, "Error getting useDQ handle\n");
 	int useDQNow = useDQData.asInt();
+
+	// determine if we're using HRBF
+	MDataHandle useHRBFData = block.inputValue(useHRBF, &returnStatus);
+	McheckErr(returnStatus, "Error getting useHRBFData handle\n");
+	int useHRBFnow = useHRBFData.asInt();
 
 	// get envelope because why not
 	MDataHandle envData = block.inputValue(envelope, &returnStatus);
@@ -113,7 +144,6 @@ HRBFSkinCluster::deform( MDataBlock& block,
 	for ( int i=0; i<numTransforms; ++i ) {
 		MMatrix worldTF = MFnMatrixData(transformsHandle.inputValue().data()).matrix();
 		transforms.append(worldTF);
-		if (signalRebuildHRBF) worldTFs.append(worldTF);
 		transformsHandle.next();
 	}
 	// inclusive matrices inverse of the driving transform at time of bind
@@ -135,6 +165,14 @@ HRBFSkinCluster::deform( MDataBlock& block,
 		rebuildHRBFStatus = rebuildHRBFStatusNow - 1; // HRBFs will need to rebuilt no matter what
 		return MS::kSuccess;
 	}
+
+	// print HRBF if requested
+	if (exportHRBFStatusNow != exportHRBFStatus) {
+		std::cout << "instructed to export HRBFs" << std::endl;
+		exportHRBFStatus = exportHRBFStatusNow;
+		// TODO: handle exporting HRBFs to the text file format
+	}
+
 
 	// rebuild HRBFs if needed
 	if (signalRebuildHRBF) {
@@ -164,7 +202,7 @@ HRBFSkinCluster::deform( MDataBlock& block,
 		for (int i = 0; i < numTransforms; ++i) {
 			std::cout << i << ": " << jointNames[i].c_str() << " : " << jointParentIndices[i] << std::endl;
 		}
-		hrbfMan.buldHRBFs(jointParentIndices, jointNames, worldTFs, bindTFs, weightListHandle, iter, weights);
+		hrbfMan.buldHRBFs(jointParentIndices, jointNames, bindTFs, weightListHandle, iter, weights);
 
 		weightListHandle.jumpToElement(0); // reset this, it's an iterator. trust me.
 		iter.reset(); // reset this iterator so we can go do normal skinning
@@ -180,6 +218,9 @@ HRBFSkinCluster::deform( MDataBlock& block,
 	}
 
 	// do HRBF corrections
+	if (useHRBFnow != 0) {
+		// TODO: do HRBF correction
+	}
 
 	return returnStatus;
 }

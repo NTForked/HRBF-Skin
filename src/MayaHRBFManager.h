@@ -19,7 +19,7 @@ public:
 	MayaHRBFManager();
 	~MayaHRBFManager();
 	void buldHRBFs(std::vector<int> jointHierarchy, std::vector<std::string> names,
-		MMatrixArray &transforms, MMatrixArray &binds,
+		MMatrixArray &binds,
 		MArrayDataHandle& weightListHandle, MItGeometry& iter, MObject &weights);
 	// we need weights to access things in the weightListHandle
 

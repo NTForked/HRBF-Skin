@@ -110,7 +110,11 @@ public:
 
 	static MObject rebuildHRBF; // for signalling that the user wants the HRBFs recomputed
 	int rebuildHRBFStatus; // for the program to check if it has rebuilt HRBFs or not
+	static MObject exportHRBF; // for exporting HRBF information to text files
+	int exportHRBFStatus; // for the program to check if it should export or not
+
 	static MObject useDQ; // for switching between DQ and LBS skinning
+	static MObject useHRBF; // for toggling HRBF correction on and off
 
 	static MObject jointParentIdcs; // for getting skeleton hierarchy information into the node
 	static MObject jointNames; // for getting joint names. useful for debugging and printing.
@@ -119,7 +123,9 @@ public:
 const MTypeId HRBFSkinCluster::id(0x00080030);
 
 MObject HRBFSkinCluster::rebuildHRBF;
+MObject HRBFSkinCluster::exportHRBF;
 MObject HRBFSkinCluster::useDQ;
+MObject HRBFSkinCluster::useHRBF;
 MObject HRBFSkinCluster::jointParentIdcs;
 MObject HRBFSkinCluster::jointNames;
 
