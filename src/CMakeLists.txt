@@ -7,7 +7,7 @@ set(SOURCE_FILES
  "MayaHRBFManager.h"
  "MayaHRBF.cpp"
  "MayaHRBF.h" 
- "FloatGrid3D.h"
+ "FloatGrid3D.hpp"
  "FloatGrid3D.cpp"
 )
 

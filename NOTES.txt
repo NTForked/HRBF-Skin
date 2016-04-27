@@ -1,3 +1,40 @@
+04/26/2016
+3D grid and HRBF building
+1) build the 3D grid -> separate project with unit tests? could also be useful for [done, maybe more testing?]
+	-should take in AABB space bounds and resolution
+	-coordinates provided will map to corners of cells: 
+		-0,0,0 is AABB min
+		-MAX,MAX,MAX is AABB max
+	-should have export method to something we can bring into python
+	-should be queryable by a position
+	-should include trilinear interpolation
+	-should be able to ask it for cell center coordinates given 3D idx or 1D idx
+
+2) build the HRBF: the preprocess
+	-take in and handle prebindTF and allow querying with world space TF
+	-take in a main joint and an optional end joint for producing bone end pts
+		-opt end point: prebindTF the translation vector from the opt end matrix
+	-should store parallel vectors of normals and positions
+	-should handle culling of lousy positions
+	-should be equipped to set up the eigen and solve
+		-just follow vaillant for now. understand later.
+
+3) strap HRBF activation and debug output into Maya
+	-add a dummy control that switches HRBF projection on and off
+	-add a control that lets you dump out HRBFs every frame
+	-be able to name individual HRBFs? another attrib, a string array
+
+TOMORROW:
+
+5) catch up
+
+5) build the HRBF manager
+	-should handle building the global gradient on another 3D grid from compositions -> we're justing using MAX here
+	-this will make exporting relatively easy
+	-should manage all the new inverse TF transforms for querying the individual HRBFs
+
+6) perform HRBF marching
+
 04/25/2016
 3D grid and HRBF
 -grid should handle trinilinear interpolation
