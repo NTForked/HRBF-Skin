@@ -11,6 +11,18 @@
 		-sliding the drawing cutoff fills the volume in from the shell, good. good
 
 -HRBF composition
+	-build an AABB around the entire deformed mesh. make globalGrid [done]
+		-transform each of the 8 coordinate values of each HRBF grid to world coords
+		-resize AABB
+	-for each grid in the manager, do:
+		-for each point in the grid, do:
+			-transform point into world coordinates -> use TF matrix
+			-compute nearest coordinate in the globalGrid
+			-query the grid for a value at this coordinate in local space -> use inverse TF matrix
+			-splat onto the grid using MAX
+
+-isovalue computation
+
 -HRBF marching
 
 7) make the video thing!

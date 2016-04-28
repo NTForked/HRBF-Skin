@@ -6,6 +6,9 @@
 #include <iostream>
 #include <fstream>
 #include <maya/MVector.h>
+#include <maya/MPoint.h>
+#include <maya/MMatrix.h>
+#include <algorithm>
 
 class FloatGrid3D {
 public:
@@ -15,6 +18,10 @@ public:
 	~FloatGrid3D();
 	void resizeAABB(float minX, float minY, float minZ,
 		float maxX, float maxY, float maxZ);
+	void resizeAABB(MPoint min, MPoint max);
+
+
+	void getWorldAABB(MMatrix tf, MPoint &wMin, MPoint &wMax);
 
 	// members
 	std::vector<float> m_cells;

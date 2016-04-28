@@ -136,7 +136,7 @@ HRBFSkinCluster::deform( MDataBlock& block,
 	bool signalRebuildHRBF = false;
 	signalRebuildHRBF = (rebuildHRBFStatus != rebuildHRBFStatusNow);
 	MMatrixArray bindTFs; // store just the bind transforms in here.
-
+	MMatrixArray boneTFs; // ALWAYS store just the bone transforms in here.
 
 	// get HRBF export status
 	MDataHandle exportCompositionData = block.inputValue(exportComposition, &returnStatus);
@@ -177,6 +177,7 @@ HRBFSkinCluster::deform( MDataBlock& block,
 		MMatrix worldTF = MFnMatrixData(transformsHandle.inputValue().data()).matrix();
 		transforms.append(worldTF);
 		transformsHandle.next();
+		boneTFs.append(worldTF);
 	}
 	// inclusive matrices inverse of the driving transform at time of bind
 	// matrices for transforming vertices to joint local space
@@ -219,7 +220,7 @@ HRBFSkinCluster::deform( MDataBlock& block,
 		std::cout << "instructed to export HRBF composition." << std::endl;
 		exportCompositionStatus = exportCompositionStatusNow;
 		// TODO: handle exporting HRBFs to the text file format
-		hrbfMan.debugCompositionToConsole(transforms, numTransforms);
+		hrbfMan.debugCompositionToConsole(boneTFs, numTransforms);
 	}
 
 	// rebuild HRBFs if needed
@@ -251,7 +252,8 @@ HRBFSkinCluster::deform( MDataBlock& block,
 		//	std::cout << i << ": " << jointNames[i].c_str() << " : " << jointParentIndices[i] << std::endl;
 		//}
 		std::cout << "rebuilding HRBFs... " << std::endl;
-		hrbfMan.buldHRBFs(jointParentIndices, jointNames, bindTFs, weightListHandle, iter, weights);
+		hrbfMan.buldHRBFs(jointParentIndices, jointNames, bindTFs, boneTFs, 
+			weightListHandle, iter, weights);
 		std::cout << "done rebuilding!" << std::endl;
 		weightListHandle.jumpToElement(0); // reset this, it's an iterator. trust me.
 		iter.reset(); // reset this iterator so we can go do normal skinning
@@ -269,7 +271,7 @@ HRBFSkinCluster::deform( MDataBlock& block,
 	// do HRBF corrections
 	if (useHRBFnow != 0) {
 		// TODO: do HRBF correction
-		hrbfMan.compose(transforms, numTransforms);
+		hrbfMan.compose(boneTFs, numTransforms);
 		iter.reset();
 		hrbfMan.correct(iter);
 	}

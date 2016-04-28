@@ -31,6 +31,93 @@ void FloatGrid3D::resizeAABB(float minX, float minY, float minZ,
 	m_cellWidth.z = (maxZ - minZ) / (float)m_res.z;
 }
 
+void FloatGrid3D::resizeAABB(MPoint min, MPoint max) {
+	m_min = glm::vec3(min.x, min.y, min.z);
+	m_max = glm::vec3(max.x, max.y, max.z);
+	m_cellWidth.x = (max.x - min.x) / (float)m_res.x;
+	m_cellWidth.y = (max.y - min.y) / (float)m_res.y;
+	m_cellWidth.z = (max.z - min.z) / (float)m_res.z;
+}
+
+
+void FloatGrid3D::getWorldAABB(MMatrix tf, MPoint &wMin, MPoint &wMax) {
+	// transform each of the 8 points into world space
+	// walk over them and compute the world AABB
+	wMin.x = HUGE_VAL;
+	wMin.y = HUGE_VAL;
+	wMin.z = HUGE_VAL;
+
+	wMax.x = -HUGE_VAL;
+	wMax.y = -HUGE_VAL;
+	wMax.z = -HUGE_VAL;
+
+	MPoint corner;
+
+	corner = MPoint(m_min.x, m_min.y, m_min.z, 1.0) * tf;
+	wMin.x = std::min(corner.x, wMin.x);
+	wMin.y = std::min(corner.y, wMin.y);
+	wMin.z = std::min(corner.z, wMin.z);
+	wMax.x = std::max(corner.x, wMax.x);
+	wMax.y = std::max(corner.y, wMax.y);
+	wMax.z = std::max(corner.z, wMax.z);
+
+	corner = MPoint(m_max.x, m_min.y, m_min.z, 1.0) * tf;
+	wMin.x = std::min(corner.x, wMin.x);
+	wMin.y = std::min(corner.y, wMin.y);
+	wMin.z = std::min(corner.z, wMin.z);
+	wMax.x = std::max(corner.x, wMax.x);
+	wMax.y = std::max(corner.y, wMax.y);
+	wMax.z = std::max(corner.z, wMax.z);
+
+	corner = MPoint(m_max.x, m_max.y, m_min.z, 1.0) * tf;
+	wMin.x = std::min(corner.x, wMin.x);
+	wMin.y = std::min(corner.y, wMin.y);
+	wMin.z = std::min(corner.z, wMin.z);
+	wMax.x = std::max(corner.x, wMax.x);
+	wMax.y = std::max(corner.y, wMax.y);
+	wMax.z = std::max(corner.z, wMax.z);
+
+	corner = MPoint(m_min.x, m_max.y, m_min.z, 1.0) * tf;
+	wMin.x = std::min(corner.x, wMin.x);
+	wMin.y = std::min(corner.y, wMin.y);
+	wMin.z = std::min(corner.z, wMin.z);
+	wMax.x = std::max(corner.x, wMax.x);
+	wMax.y = std::max(corner.y, wMax.y);
+	wMax.z = std::max(corner.z, wMax.z);
+
+	corner = MPoint(m_min.x, m_min.y, m_max.z, 1.0) * tf;
+	wMin.x = std::min(corner.x, wMin.x);
+	wMin.y = std::min(corner.y, wMin.y);
+	wMin.z = std::min(corner.z, wMin.z);
+	wMax.x = std::max(corner.x, wMax.x);
+	wMax.y = std::max(corner.y, wMax.y);
+	wMax.z = std::max(corner.z, wMax.z);
+
+	corner = MPoint(m_max.x, m_min.y, m_max.z, 1.0) * tf;
+	wMin.x = std::min(corner.x, wMin.x);
+	wMin.y = std::min(corner.y, wMin.y);
+	wMin.z = std::min(corner.z, wMin.z);
+	wMax.x = std::max(corner.x, wMax.x);
+	wMax.y = std::max(corner.y, wMax.y);
+	wMax.z = std::max(corner.z, wMax.z);
+
+	corner = MPoint(m_max.x, m_max.y, m_max.z, 1.0) * tf;
+	wMin.x = std::min(corner.x, wMin.x);
+	wMin.y = std::min(corner.y, wMin.y);
+	wMin.z = std::min(corner.z, wMin.z);
+	wMax.x = std::max(corner.x, wMax.x);
+	wMax.y = std::max(corner.y, wMax.y);
+	wMax.z = std::max(corner.z, wMax.z);
+
+	corner = MPoint(m_min.x, m_max.y, m_max.z, 1.0) * tf;
+	wMin.x = std::min(corner.x, wMin.x);
+	wMin.y = std::min(corner.y, wMin.y);
+	wMin.z = std::min(corner.z, wMin.z);
+	wMax.x = std::max(corner.x, wMax.x);
+	wMax.y = std::max(corner.y, wMax.y);
+	wMax.z = std::max(corner.z, wMax.z);
+}
+
 int FloatGrid3D::threeDto1D(int x, int y, int z) {
 
 	// out of bounds? return something indicative.

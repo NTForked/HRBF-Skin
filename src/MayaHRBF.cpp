@@ -19,7 +19,7 @@ MayaHRBF::MayaHRBF(std::string &name, MMatrix &invBindTF) {
 		-1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f);
 	mf_gradZ = new FloatGrid3D(HRBF_RES, HRBF_RES, HRBF_RES,
 		-1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f);
-	mf_gradMag2 = new FloatGrid3D(HRBF_RES, HRBF_RES, HRBF_RES,
+	mf_gradMag = new FloatGrid3D(HRBF_RES, HRBF_RES, HRBF_RES,
 		-1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f);
 
 	m_r = -1.0f;
@@ -31,7 +31,7 @@ MayaHRBF::~MayaHRBF() {
 	if (mf_gradX != NULL) delete mf_gradX;
 	if (mf_gradY != NULL) delete mf_gradY;
 	if (mf_gradZ != NULL) delete mf_gradZ;
-	if (mf_gradMag2 != NULL) delete mf_gradMag2;
+	if (mf_gradMag != NULL) delete mf_gradMag;
 
 }
 
@@ -260,10 +260,10 @@ void MayaHRBF::compute() {
 		maxX + pad, maxY + pad, maxZ + pad);
 	mf_gradZ->clear(0.0f);
 
-	mf_gradMag2->resizeAABB(
+	mf_gradMag->resizeAABB(
 		minX - pad, minY - pad, minZ - pad,
 		maxX + pad, maxY + pad, maxZ + pad);
-	mf_gradMag2->clear(0.0f);
+	mf_gradMag->clear(0.0f);
 
 	/***** compute unknowns (equation 1/vaillant's HRBF resources) *****/
 	reduceSamples();
@@ -304,13 +304,37 @@ void MayaHRBF::compute() {
 
 				// shove into the grids
 				mf_vals->setCell(x, y, z, val);
-				mf_gradX->setCell(x, y, z, dx);
-				mf_gradY->setCell(x, y, z, dy);
-				mf_gradZ->setCell(x, y, z, dz);
-				mf_gradMag2->setCell(x, y, z, dx * dx * dz * dz * dy * dy);
+				if (val > 0.00001) {
+					mf_gradX->setCell(x, y, z, dx);
+					mf_gradY->setCell(x, y, z, dy);
+					mf_gradZ->setCell(x, y, z, dz);
+					mf_gradMag->setCell(x, y, z, sqrt(dx * dx * dz * dz * dy * dy));
+				}
 			}
 		}
 	}
+}
+
+void MayaHRBF::query(float x, float y, float z,
+	float &val, float &gradX, float &gradY, float &gradZ, float &gradM) {
+	if (mf_vals->checkBounds(x, y, z)) {
+		mf_vals->trilinear(x, y, z, val);
+		mf_gradX->trilinear(x, y, z, gradX);
+		mf_gradY->trilinear(x, y, z, gradY);
+		mf_gradZ->trilinear(x, y, z, gradZ);
+		mf_gradMag->trilinear(x, y, z, gradM);
+	}
+	else {
+		val = 0.0f;
+		gradX = 0.0f;
+		gradY = 0.0f;
+		gradZ = 0.0f;
+		gradM = 0.0f;
+	}
+}
+
+void MayaHRBF::query(MPoint pos, float &val, float &gradX, float &gradY, float &gradZ, float &gradM) {
+	return query(pos.x, pos.y, pos.z, val, gradX, gradY, gradZ, gradM);
 }
 
 void MayaHRBF::printHRBFSamplingDebug() {
@@ -362,6 +386,7 @@ void MayaHRBF::printHRBFSamplingDebug() {
 
 void MayaHRBF::printHRBF() {
 	mf_vals->exportToDebugString(m_name);
+	//mf_gradMag->exportToDebugString(m_name);
 }
 
 void MayaHRBF::reduceSamples() {

@@ -20,9 +20,10 @@ public:
 	void setupBones();
 	void addVertex(MPoint pos, MVector nor); // take vertex into local space. handle culling.
 	void compute();
-	float getVal(MPoint pos);
-	float getMagGrad(MPoint pos);
-	MVector getGrad(MPoint pos);
+
+	void query(float x, float y, float z, // expecting local coordinates
+		float &val, float &gradX, float &gradY, float &gradZ, float &gradM);
+	void query(MPoint pos, float &val, float &gradX, float &gradY, float &gradZ, float &gradM);
 
 	void printHRBFSamplingDebug();
 	void printHRBF(); // TODO: implement!
@@ -30,8 +31,6 @@ public:
 	std::string m_name;
 	MayaHRBF* m_parent;
 	std::vector<MayaHRBF*> m_children;
-
-private:
 
 	void reduceSamples();
 	bool isExtremity();
@@ -65,7 +64,7 @@ private:
 	FloatGrid3D *mf_gradX;
 	FloatGrid3D *mf_gradY;
 	FloatGrid3D *mf_gradZ;
-	FloatGrid3D *mf_gradMag2;
+	FloatGrid3D *mf_gradMag;
 };
 
 #endif
