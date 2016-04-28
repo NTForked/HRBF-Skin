@@ -10,7 +10,7 @@
 	-gradient looks ok:
 		-sliding the drawing cutoff fills the volume in from the shell, good. good
 
--HRBF composition
+-HRBF composition [DONE]
 	-build an AABB around the entire deformed mesh. make globalGrid [done]
 		-transform each of the 8 coordinate values of each HRBF grid to world coords
 		-resize AABB
@@ -18,8 +18,11 @@
 		-for each point in the grid, do:
 			-transform point into world coordinates -> use TF matrix
 			-compute nearest coordinate in the globalGrid
+				-NOT just the nearest less-then coordinate
+				-this leads to shifting
 			-query the grid for a value at this coordinate in local space -> use inverse TF matrix
 			-splat onto the grid using MAX
+			-btw DON'T USE SETBYCOORDINATE WHEN YOU MEAN SETCELL!!!!!! LOST HOURS AND HOURS TO THAT TYPO
 
 -isovalue computation
 

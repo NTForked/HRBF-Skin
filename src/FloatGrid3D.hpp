@@ -38,6 +38,8 @@ public:
 	// index of grid coordinate to the bottom/left/back
 	bool checkBounds(float x, float y, float z);
 	void coordToIDX(float x, float y, float z, int &ix, int &iy, int &iz);
+	float distToIDX(float x, float y, float z, int ix, int iy, int iz);
+	void nearestIDX(float x, float y, float z, int &ix, int &iy, int &iz);
 	void idxToCoord(int ix, int iy, int iz, float &x, float &y, float &z);
 	MVector idxToMVector(int ix, int iy, int iz);
 

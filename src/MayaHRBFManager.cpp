@@ -29,7 +29,7 @@ MayaHRBFManager::~MayaHRBFManager() {
 	m_HRBFs.clear();
 }
 
-void MayaHRBFManager::buldHRBFs(std::vector<int> jointHierarchy, std::vector<std::string> names,
+void MayaHRBFManager::buildHRBFs(std::vector<int> jointHierarchy, std::vector<std::string> names,
 	MMatrixArray &binds, MMatrixArray &transforms,
 	MArrayDataHandle& weightListHandle, MItGeometry& iter, MObject &weights) {
 	// wipe whatever used to be in the hierarchy
@@ -132,9 +132,16 @@ void MayaHRBFManager::compose(MMatrixArray &transforms, int numTransforms) {
 	MPoint aabbMax(-HUGE_VAL, -HUGE_VAL, -HUGE_VAL, 1.0);
 	MPoint minLocal;
 	MPoint maxLocal;
+	//std::string lowestName;
 
 	for (int i = 0; i < numTransforms; i++) {
+		if (m_HRBFs[i]->m_posSamples.size() < 1) continue;
+		//if (m_HRBFs[i]->m_name != "LeftLeg" && m_HRBFs[i]->m_name != "RightLeg") continue; // debug
 		m_HRBFs[i]->mf_vals->getWorldAABB(transforms[i], minLocal, maxLocal);
+		//if (aabbMin.y > minLocal.y) {
+		//	lowestName = m_HRBFs[i]->m_name;
+		//}
+
 		aabbMin.x = std::min(aabbMin.x, minLocal.x);
 		aabbMin.y = std::min(aabbMin.y, minLocal.y);
 		aabbMin.z = std::min(aabbMin.z, minLocal.z);
@@ -144,9 +151,9 @@ void MayaHRBFManager::compose(MMatrixArray &transforms, int numTransforms) {
 		aabbMax.z = std::max(aabbMax.z, maxLocal.z);
 	}
 	// resize the grids, with a little padding
-	double padx = aabbMax.x - aabbMin.x / (double)HRBF_COMPRES;
-	double pady = aabbMax.y - aabbMin.y / (double)HRBF_COMPRES;
-	double padz = aabbMax.z - aabbMin.z / (double)HRBF_COMPRES;
+	double padx = 2.0 * (aabbMax.x - aabbMin.x) / (double)HRBF_COMPRES;
+	double pady = 2.0 * (aabbMax.y - aabbMin.y) / (double)HRBF_COMPRES;
+	double padz = 2.0 * (aabbMax.z - aabbMin.z) / (double)HRBF_COMPRES;
 
 	aabbMax.x += padx;
 	aabbMax.y += pady;
@@ -163,9 +170,9 @@ void MayaHRBFManager::compose(MMatrixArray &transforms, int numTransforms) {
 	mf_gradMag->resizeAABB(aabbMin, aabbMax);
 
 	// debug bbox
-	std::cout << "composed HRBF bbox is bounded by ";
-	std::cout << "max:" << aabbMax.x << " " << aabbMax.y << " " << aabbMax.z;
-	std::cout << " min:" << aabbMin.x << " " << aabbMin.y << " " << aabbMin.z << std::endl;;
+	//std::cout << "composed HRBF bbox is bounded by ";
+	//std::cout << "max:" << aabbMax.x << " " << aabbMax.y << " " << aabbMax.z;
+	//std::cout << " min:" << aabbMin.x << " " << aabbMin.y << " " << aabbMin.z << std::endl;;
 
 	mf_vals->clear(0.0f);
 	mf_gradX->clear(0.0f);
@@ -196,6 +203,8 @@ void MayaHRBFManager::compose(MMatrixArray &transforms, int numTransforms) {
 		grid = m_HRBFs[i];
 		toWorld = transforms[i];
 		toLocal = toWorld.inverse();
+		//if (grid->m_name != "LeftLeg" && grid->m_name != "RightLeg") continue; // debug
+		
 		for (int x = 0; x < HRBF_RES; x++) {
 			for (int y = 0; y < HRBF_RES; y++) {
 				for (int z = 0; z < HRBF_RES; z++) {
@@ -204,7 +213,7 @@ void MayaHRBFManager::compose(MMatrixArray &transforms, int numTransforms) {
 					// transform point to world coordinates
 					worldP1 = localP1 * toWorld;
 					// get nearest coordinate on the world grid
-					mf_vals->coordToIDX(worldP1.x, worldP1.y, worldP1.z, ix, iy, iz);
+					mf_vals->nearestIDX(worldP1.x, worldP1.y, worldP1.z, ix, iy, iz);
 					mf_vals->idxToCoord(ix, iy, iz, fx, fy, fz);
 					worldP2.x = fx; worldP2.y = fy; worldP2.z = fz; worldP2.w = 1.0;
 					// query grid for value at world grid's cell coordinate
@@ -213,11 +222,11 @@ void MayaHRBFManager::compose(MMatrixArray &transforms, int numTransforms) {
 					// max onto grid
 					currVal = mf_vals->getCell(ix, iy, iz);
 					if (currVal < val) {
-						mf_vals->setByCoordinate(ix, iy, iz, val);
-						mf_gradX->setByCoordinate(ix, iy, iz, fx);
-						mf_gradY->setByCoordinate(ix, iy, iz, fy);
-						mf_gradZ->setByCoordinate(ix, iy, iz, fz);
-						mf_gradMag->setByCoordinate(ix, iy, iz, mag);
+						mf_vals->setCell(ix, iy, iz, val);
+						mf_gradX->setCell(ix, iy, iz, fx);
+						mf_gradY->setCell(ix, iy, iz, fy);
+						mf_gradZ->setCell(ix, iy, iz, fz);
+						mf_gradMag->setCell(ix, iy, iz, mag);
 					}
 				}
 			}

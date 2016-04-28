@@ -23,6 +23,21 @@ MayaHRBF::MayaHRBF(std::string &name, MMatrix &invBindTF) {
 		-1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f);
 
 	m_r = -1.0f;
+
+	// some test things because idk what maya is even doing anymore
+	//MMatrix IDhopefully1 = invBindTF * m_bindTF;
+	//MMatrix IDhopefully2 = m_bindTF * invBindTF;
+	//
+	//MPoint p1(1.0, 1.0, 1.0);
+	//MPoint p2(2.0, 2.0, 2.0);
+	//MVector v1 = p2 - p1;
+	//MVector v2 = p1 - p2;
+	//MVector v1s1 = v1 * 2.0;
+	//MVector v1s2 = 2.0 * v1;
+	//MPoint p3 = p1 * invBindTF;
+	//MPoint p4 = p3 * m_bindTF;
+
+
 	return;
 }
 
@@ -209,7 +224,7 @@ void MayaHRBF::compute() {
 		}
 	}
 
-	/***** compute AABB. pad out to + r / 2 on each side. build grids *****/
+	/***** compute AABB. pad out to + r on each side. build grids *****/
 	int numPositions = m_posSamples.size();
 	float minX, minY, minZ, maxX, maxY, maxZ;
 	minX = HUGE_VAL; maxX = -HUGE_VAL;
@@ -239,7 +254,8 @@ void MayaHRBF::compute() {
 		maxZ = std::max(maxZ, (float)pos.z);
 	}
 
-	float pad = m_r / 2.0f;
+	float pad = m_r;
+
 	mf_vals->resizeAABB(
 		minX - pad, minY - pad, minZ - pad,
 		maxX + pad, maxY + pad, maxZ + pad);
@@ -264,6 +280,10 @@ void MayaHRBF::compute() {
 		minX - pad, minY - pad, minZ - pad,
 		maxX + pad, maxY + pad, maxZ + pad);
 	mf_gradMag->clear(0.0f);
+
+
+	//mf_vals->clear(1.0f);
+	//return; // debug: eigen is too slow in debug mode for this to be bearable
 
 	/***** compute unknowns (equation 1/vaillant's HRBF resources) *****/
 	reduceSamples();
@@ -334,7 +354,25 @@ void MayaHRBF::query(float x, float y, float z,
 }
 
 void MayaHRBF::query(MPoint pos, float &val, float &gradX, float &gradY, float &gradZ, float &gradM) {
-	return query(pos.x, pos.y, pos.z, val, gradX, gradY, gradZ, gradM);
+	if (mf_vals->checkBounds(pos.x, pos.y, pos.z)) {
+		mf_vals->trilinear(pos.x, pos.y, pos.z, val);
+		mf_gradX->trilinear(pos.x, pos.y, pos.z, gradX);
+		mf_gradY->trilinear(pos.x, pos.y, pos.z, gradY);
+		mf_gradZ->trilinear(pos.x, pos.y, pos.z, gradZ);
+		mf_gradMag->trilinear(pos.x, pos.y, pos.z, gradM);
+		//val = mf_vals->getByCoordinate(pos.x, pos.y, pos.z);
+		//gradX = mf_gradX->getByCoordinate(pos.x, pos.y, pos.z);
+		//gradY = mf_gradY->getByCoordinate(pos.x, pos.y, pos.z);
+		//gradZ = mf_gradZ->getByCoordinate(pos.x, pos.y, pos.z);
+		//gradM = mf_gradMag->getByCoordinate(pos.x, pos.y, pos.z);
+	}
+	else {
+		val = 0.0f;
+		gradX = 0.0f;
+		gradY = 0.0f;
+		gradZ = 0.0f;
+		gradM = 0.0f;
+	}
 }
 
 void MayaHRBF::printHRBFSamplingDebug() {

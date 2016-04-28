@@ -176,8 +176,8 @@ HRBFSkinCluster::deform( MDataBlock& block,
 	for ( int i=0; i<numTransforms; ++i ) {
 		MMatrix worldTF = MFnMatrixData(transformsHandle.inputValue().data()).matrix();
 		transforms.append(worldTF);
-		transformsHandle.next();
 		boneTFs.append(worldTF);
+		transformsHandle.next();
 	}
 	// inclusive matrices inverse of the driving transform at time of bind
 	// matrices for transforming vertices to joint local space
@@ -252,7 +252,7 @@ HRBFSkinCluster::deform( MDataBlock& block,
 		//	std::cout << i << ": " << jointNames[i].c_str() << " : " << jointParentIndices[i] << std::endl;
 		//}
 		std::cout << "rebuilding HRBFs... " << std::endl;
-		hrbfMan.buldHRBFs(jointParentIndices, jointNames, bindTFs, boneTFs, 
+		hrbfMan.buildHRBFs(jointParentIndices, jointNames, bindTFs, boneTFs, 
 			weightListHandle, iter, weights);
 		std::cout << "done rebuilding!" << std::endl;
 		weightListHandle.jumpToElement(0); // reset this, it's an iterator. trust me.

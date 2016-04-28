@@ -147,6 +147,81 @@ void FloatGrid3D::coordToIDX(float x, float y, float z,
 	iz = (z - m_min.z) / (float)m_cellWidth.z;
 }
 
+float FloatGrid3D::distToIDX(float x, float y, float z, int ix, int iy, int iz)
+{
+	glm::vec3 pt(x, y, z);
+	float fx, fy, fz;
+	idxToCoord(ix, iy, iz, fx, fy, fz);
+	glm::vec3 pt2(fx, fy, fz);
+	return (pt - pt2).length();
+}
+
+void FloatGrid3D::nearestIDX(float x, float y, float z,
+	int &ix, int &iy, int &iz) {
+
+	coordToIDX(x, y, z, ix, iy, iz);
+	float bestDist = distToIDX(x, y, z, ix, iy, iz);
+
+	// check other 7 nearest points to see if one is closer
+	float candDist;
+	int bestX = ix;
+	int bestY = iy;
+	int bestZ = iz;
+	candDist = distToIDX(x, y, z, ix, iy, iz + 1);
+	if (candDist < bestDist) {
+		bestDist = candDist;
+		bestX = ix;
+		bestY = iy;
+		bestZ = iz + 1;
+	}
+	candDist = distToIDX(x, y, z, ix, iy + 1, iz);
+	if (candDist < bestDist) {
+		bestDist = candDist;
+		bestX = ix;
+		bestY = iy + 1;
+		bestZ = iz;
+	}
+	candDist = distToIDX(x, y, z, ix + 1, iy, iz);
+	if (candDist < bestDist) {
+		bestDist = candDist;
+		bestX = ix + 1;
+		bestY = iy;
+		bestZ = iz;
+	}
+	candDist = distToIDX(x, y, z, ix + 1, iy + 1, iz);
+	if (candDist < bestDist) {
+		bestDist = candDist;
+		bestX = ix + 1;
+		bestY = iy + 1;
+		bestZ = iz;
+	}
+	candDist = distToIDX(x, y, z, ix, iy + 1, iz + 1);
+	if (candDist < bestDist) {
+		bestDist = candDist;
+		bestX = ix;
+		bestY = iy + 1;
+		bestZ = iz + 1;
+	}
+	candDist = distToIDX(x, y, z, ix + 1, iy, iz + 1);
+	if (candDist < bestDist) {
+		bestDist = candDist;
+		bestX = ix + 1;
+		bestY = iy;
+		bestZ = iz + 1;
+	}
+	candDist = distToIDX(x, y, z, ix + 1, iy + 1, iz + 1);
+	if (candDist < bestDist) {
+		bestDist = candDist;
+		bestX = ix + 1;
+		bestY = iy + 1;
+		bestZ = iz + 1;
+	}
+	ix = bestX;
+	iy = bestY;
+	iz = bestZ;
+	return;
+}
+
 void FloatGrid3D::idxToCoord(int ix, int iy, int iz,
 	float &x, float &y, float &z
 	) {
@@ -308,5 +383,9 @@ void FloatGrid3D::exportToDebugString(std::string nodeName) {
 			}
 		}
 	}
+	// print bounding box values
+	std::cout << m_min.x << " " << m_min.y << " " << m_min.z << " " << 1000.0f << "\n";
+	std::cout << m_max.x << " " << m_max.y << " " << m_max.z << " " << 1000.0f << "\n";
+
 	return;
 }

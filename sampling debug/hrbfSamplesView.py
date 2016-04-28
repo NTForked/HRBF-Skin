@@ -3,8 +3,11 @@ import pylab
 from mpl_toolkits.mplot3d import Axes3D
 
 #hrbf_file = open("left_leg_samples")
-hrbf_file = open("hips_samples")
+#hrbf_file = open("hips_samples")
 #hrbf_file = open("left_up_leg_samples")
+#hrbf_file = open("neck_downsampled")
+hrbf_file = open("left_leg_downsampled")
+
 
 sample_pts_x = []
 sample_pts_y = []
