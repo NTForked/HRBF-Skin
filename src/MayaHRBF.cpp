@@ -304,12 +304,14 @@ void MayaHRBF::compute() {
 	/***** compute HRBF values for every cell in the grids *****/
 	// - reparameterize - see Vaillant's resources
 	// - also do the gradients
-	float xf, yf, zf;
-	float dx, dy, dz;
-	float val;
-	float mag;
+
 	for (int x = 0; x < HRBF_RES; x++) {
+		#pragma omp parallel for
 		for (int y = 0; y < HRBF_RES; y++) {
+			float xf, yf, zf;
+			float dx, dy, dz;
+			float val;
+			float mag;
 			for (int z = 0; z < HRBF_RES; z++) {
 				// get coordinates
 				mf_vals->idxToCoord(x, y, z, xf, yf, zf);

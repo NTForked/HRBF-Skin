@@ -72,6 +72,7 @@ void MayaHRBFManager::buildHRBFs(std::vector<int> jointHierarchy, std::vector<st
 	int numCandidates;
 	double bestWeight;
 	int bestHRBF;
+	m_numISOs = 0;
 
 	for (; !iter.isDone(); iter.next()) {
 		pt = iter.position();
@@ -79,6 +80,7 @@ void MayaHRBFManager::buildHRBFs(std::vector<int> jointHierarchy, std::vector<st
 		hrbfCandidates.clear();
 		candidateWeights.clear();
 		numCandidates = 0;
+		m_numISOs++;
 
 		// get the weights for this point
 		MArrayDataHandle weightsHandle = weightListHandle.inputValue().child(weights);
@@ -115,8 +117,32 @@ void MayaHRBFManager::buildHRBFs(std::vector<int> jointHierarchy, std::vector<st
 		std::cout << "done!" << std::endl;
 	}
 
+	std::cout << "computing iso values..." << std::endl;
 	// compute isovalues
 	compose(transforms, m_numJoints);
+	m_isoVals.resize(m_numISOs);
+
+	iter.reset();
+	float iso;
+	
+	// additional statistics
+	float iso_min = HUGE_VAL;
+	float iso_max = -HUGE_VAL;
+	float iso_avg = 0.0f;
+	
+	int i = 0;
+	for (; !iter.isDone(); iter.next()) {
+		pt = iter.position();
+		mf_vals->trilinear(pt.x, pt.y, pt.z, iso);
+		m_isoVals[i] = iso;
+		i++;
+		iso_avg += iso;
+		iso_min = std::min(iso_min, iso);
+		iso_max = std::max(iso_max, iso);
+	}
+	std::cout << "iso max: " << iso_max << std::endl;
+	std::cout << "iso min: " << iso_min << std::endl;
+	std::cout << "iso avg: " << iso_avg / (float)m_numISOs << std::endl;
 }
 
 void MayaHRBFManager::compose(MMatrixArray &transforms, int numTransforms) {
@@ -190,14 +216,8 @@ void MayaHRBFManager::compose(MMatrixArray &transforms, int numTransforms) {
 	MayaHRBF *grid;
 	MMatrix toWorld;
 	MMatrix toLocal;
-	float fx, fy, fz;
-	MPoint localP1; // local space coordinates
-	MPoint worldP1;
-	MPoint worldP2; // nearest cell coordinate on composed grid
-	MPoint localP2;
-	float val, mag;
-	int ix, iy, iz; // on the global grid
-	float currVal;
+
+
 
 	for (int i = 0; i < numTransforms; i++) {
 		grid = m_HRBFs[i];
@@ -206,7 +226,17 @@ void MayaHRBFManager::compose(MMatrixArray &transforms, int numTransforms) {
 		//if (grid->m_name != "LeftLeg" && grid->m_name != "RightLeg") continue; // debug
 		
 		for (int x = 0; x < HRBF_RES; x++) {
+			#pragma omp parallel for
 			for (int y = 0; y < HRBF_RES; y++) {
+				float fx, fy, fz;
+				MPoint localP1; // local space coordinates
+				MPoint worldP1;
+				MPoint worldP2; // nearest cell coordinate on composed grid
+				MPoint localP2;
+				float val, mag;
+				int ix, iy, iz; // on the global grid
+				float currVal;
+
 				for (int z = 0; z < HRBF_RES; z++) {
 					grid->mf_vals->idxToCoord(x, y, z, fx, fy, fz);
 					localP1.x = fx; localP1.y = fy; localP1.z = fz; localP1.w = 1.0;

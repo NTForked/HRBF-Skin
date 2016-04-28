@@ -242,7 +242,6 @@ MVector FloatGrid3D::idxToMVector(int ix, int iy, int iz) {
 
 
 void FloatGrid3D::clear(float val) {
-
 	for (int i = 0; i < m_numCells; i++) {
 		m_cells[i] = val;
 	}

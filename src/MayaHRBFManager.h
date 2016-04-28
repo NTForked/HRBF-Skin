@@ -38,6 +38,7 @@ public:
 	std::vector<MayaHRBF*> m_HRBFs; // parallel to MMatrixArrays transforms and binds
 	std::vector<float> m_isoVals; // parallel to MItGeometry iter
 	int m_numJoints;
+	int m_numISOs; // isovalues, one per vertex
 
 	FloatGrid3D *mf_vals;
 	FloatGrid3D *mf_gradX;
