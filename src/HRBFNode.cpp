@@ -4,10 +4,11 @@ void* HRBFSkinCluster::creator()
 {
 	HRBFSkinCluster *cluster = new HRBFSkinCluster();
 	// a little big of HRBF setup:
-	cluster->rebuildHRBFStatus = -1;
+	cluster->rebuildHRBFStatus = -1; // force rebuild on load
 	cluster->exportHRBFSamplesStatus = ""; // don't export normally
 	cluster->exportHRBFValuesStatus = ""; // don't export normally
-	cluster->exportHRBFCompStatus = 0;
+
+	cluster->exportCompositionStatus = 0; // default value. don't export unless asked.
 
 	return cluster;
 }
@@ -28,11 +29,11 @@ MStatus HRBFSkinCluster::initialize()
 	returnStatus = addAttribute(HRBFSkinCluster::rebuildHRBF);
 	McheckErr(returnStatus, "ERROR adding rbld attribute\n");
 
-	HRBFSkinCluster::exportHRBFComp = numAttr.create("ExportHRBFComp", "exprtC", MFnNumericData::kInt,
+	HRBFSkinCluster::exportComposition = numAttr.create("ExportComp", "exprtC", MFnNumericData::kInt,
 		0, &returnStatus);
-	McheckErr(returnStatus, "ERROR creating ExportHRBFComp attribute\n");
-	returnStatus = addAttribute(HRBFSkinCluster::exportHRBFComp);
-	McheckErr(returnStatus, "ERROR adding ExportHRBFComp attribute\n");
+	McheckErr(returnStatus, "ERROR creating exprtC attribute\n");
+	returnStatus = addAttribute(HRBFSkinCluster::exportComposition);
+	McheckErr(returnStatus, "ERROR adding exprtC attribute\n");
 
 	HRBFSkinCluster::exportHRBFSamples = typedAttr.create("ExportHRBFs", "exprtS", MFnNumericData::kString,
 		&returnStatus);
@@ -76,13 +77,13 @@ MStatus HRBFSkinCluster::initialize()
 	McheckErr(returnStatus, "ERROR adding jNms attribute\n");
 
 	// set up affects
-	returnStatus = attributeAffects(HRBFSkinCluster::exportHRBFComp,
-		HRBFSkinCluster::outputGeom);
-	McheckErr(returnStatus, "ERROR in attributeAffects with exportHRBFComp\n");
-
 	returnStatus = attributeAffects(HRBFSkinCluster::rebuildHRBF,
 		HRBFSkinCluster::outputGeom);
 	McheckErr(returnStatus, "ERROR in attributeAffects with rebuildHRBF\n");
+
+	returnStatus = attributeAffects(HRBFSkinCluster::exportComposition,
+		HRBFSkinCluster::outputGeom);
+	McheckErr(returnStatus, "ERROR in attributeAffects with exportComposition\n");
 
 	returnStatus = attributeAffects(HRBFSkinCluster::exportHRBFSamples,
 		HRBFSkinCluster::outputGeom);
@@ -136,11 +137,12 @@ HRBFSkinCluster::deform( MDataBlock& block,
 	signalRebuildHRBF = (rebuildHRBFStatus != rebuildHRBFStatusNow);
 	MMatrixArray bindTFs; // store just the bind transforms in here.
 
-	MDataHandle exportHRBFCompStatusData = block.inputValue(exportHRBFComp, &returnStatus);
-	McheckErr(returnStatus, "Error getting exportHRBFComp handle\n");
-	int exportHRBFCompStatusNow = exportHRBFCompStatusData.asInt();
 
 	// get HRBF export status
+	MDataHandle exportCompositionData = block.inputValue(exportComposition, &returnStatus);
+	McheckErr(returnStatus, "Error getting exportComposition handle\n");
+	int exportCompositionStatusNow = exportCompositionData.asInt();
+
 	MDataHandle HRBFExportSamplesData = block.inputValue(exportHRBFSamples, &returnStatus);
 	McheckErr(returnStatus, "Error getting exportHRBFSamples handle\n");
 	std::string exportHRBFSamplesStatusNow = HRBFExportSamplesData.asString().asChar();
@@ -213,10 +215,11 @@ HRBFSkinCluster::deform( MDataBlock& block,
 	}
 
 	// print HRBF composition if requested
-	if (exportHRBFCompStatus != exportHRBFCompStatusNow) {
-		exportHRBFCompStatus = exportHRBFCompStatusNow;
-		std::cout << "instructed to export HRBF composition" << std::endl;
-		hrbfMan.debugCompositionToConsole();
+	if (exportCompositionStatusNow != exportCompositionStatus) {
+		std::cout << "instructed to export HRBF composition." << std::endl;
+		exportCompositionStatus = exportCompositionStatusNow;
+		// TODO: handle exporting HRBFs to the text file format
+		hrbfMan.debugCompositionToConsole(transforms, numTransforms);
 	}
 
 	// rebuild HRBFs if needed
@@ -265,9 +268,9 @@ HRBFSkinCluster::deform( MDataBlock& block,
 
 	// do HRBF corrections
 	if (useHRBFnow != 0) {
-		iter.reset();
 		// TODO: do HRBF correction
 		hrbfMan.compose(transforms, numTransforms);
+		iter.reset();
 		hrbfMan.correct(iter);
 	}
 

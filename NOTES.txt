@@ -1,5 +1,15 @@
 04/28/2016
 6) catch up
+-export HRBF grad and use sliced plotting to look at a slice [done]
+	-observation: on Calabrese, Maya sometimes loads the scene before finishing the HRBF reconstructions
+	-leads to null problems when exporting, doing ANYTHING with HRBFs
+	-this is... disturbing
+	-but running Maya with some other apps seems to maybe get around the problem?
+	-another thing that seems to work: let Maya crash by linking the debugger in release mode, trying to export, stopping debug
+	-next time it runs it seems to be ok -> wat
+	-gradient looks ok:
+		-sliding the drawing cutoff fills the volume in from the shell, good. good
+
 -HRBF composition
 -HRBF marching
 

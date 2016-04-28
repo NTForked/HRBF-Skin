@@ -31,13 +31,13 @@ public:
 	std::vector<float> m_isoVals; // parallel to MItGeometry iter
 	int m_numJoints;
 
-	void compose(MMatrixArray&  transforms, int numTransforms); // TODO: implement
+	void compose(MMatrixArray &transforms, int numTransforms); // compose the HRBFs
 
-	void correct(MItGeometry& iter); // TODO: implement
+	void correct(MItGeometry& iter);
 
 	void debugSamplesToConsole(std::string nodeName);
 	void debugValuesToConsole(std::string nodeName);
-	void debugCompositionToConsole();
+	void debugCompositionToConsole(MMatrixArray &transforms, int numTransforms);
 
 };
 

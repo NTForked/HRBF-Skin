@@ -101,6 +101,14 @@ void MayaHRBFManager::buldHRBFs(std::vector<int> jointHierarchy, std::vector<std
 
 }
 
+void MayaHRBFManager::compose(MMatrixArray &transforms, int numTransforms) {
+
+}
+
+void MayaHRBFManager::correct(MItGeometry& iter) {
+
+}
+
 void MayaHRBFManager::debugSamplesToConsole(std::string nodeName) {
 	for (int i = 0; i < m_numJoints; i++) {
 		if (m_HRBFs[i]->m_name == nodeName) {
@@ -117,4 +125,8 @@ void MayaHRBFManager::debugValuesToConsole(std::string nodeName) {
 			break;
 		}
 	}
+}
+
+void MayaHRBFManager::debugCompositionToConsole(MMatrixArray &transforms, int numTransforms) {
+	compose(transforms, numTransforms);
 }
