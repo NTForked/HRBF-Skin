@@ -20,6 +20,9 @@ public:
 	void setupBones();
 	void addVertex(MPoint pos, MVector nor); // take vertex into local space. handle culling.
 	void compute();
+	float getVal(MPoint pos);
+	float getMagGrad(MPoint pos);
+	MVector getGrad(MPoint pos);
 
 	void printHRBFSamplingDebug();
 	void printHRBF(); // TODO: implement!
@@ -27,6 +30,8 @@ public:
 	std::string m_name;
 	MayaHRBF* m_parent;
 	std::vector<MayaHRBF*> m_children;
+
+private:
 
 	void reduceSamples();
 	bool isExtremity();

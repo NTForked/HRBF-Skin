@@ -7,6 +7,7 @@ void* HRBFSkinCluster::creator()
 	cluster->rebuildHRBFStatus = -1;
 	cluster->exportHRBFSamplesStatus = ""; // don't export normally
 	cluster->exportHRBFValuesStatus = ""; // don't export normally
+	cluster->exportHRBFCompStatus = 0;
 
 	return cluster;
 }
@@ -26,6 +27,12 @@ MStatus HRBFSkinCluster::initialize()
 	McheckErr(returnStatus, "ERROR creating rbld attribute\n");
 	returnStatus = addAttribute(HRBFSkinCluster::rebuildHRBF);
 	McheckErr(returnStatus, "ERROR adding rbld attribute\n");
+
+	HRBFSkinCluster::exportHRBFComp = numAttr.create("ExportHRBFComp", "exprtC", MFnNumericData::kInt,
+		0, &returnStatus);
+	McheckErr(returnStatus, "ERROR creating ExportHRBFComp attribute\n");
+	returnStatus = addAttribute(HRBFSkinCluster::exportHRBFComp);
+	McheckErr(returnStatus, "ERROR adding ExportHRBFComp attribute\n");
 
 	HRBFSkinCluster::exportHRBFSamples = typedAttr.create("ExportHRBFs", "exprtS", MFnNumericData::kString,
 		&returnStatus);
@@ -69,6 +76,10 @@ MStatus HRBFSkinCluster::initialize()
 	McheckErr(returnStatus, "ERROR adding jNms attribute\n");
 
 	// set up affects
+	returnStatus = attributeAffects(HRBFSkinCluster::exportHRBFComp,
+		HRBFSkinCluster::outputGeom);
+	McheckErr(returnStatus, "ERROR in attributeAffects with exportHRBFComp\n");
+
 	returnStatus = attributeAffects(HRBFSkinCluster::rebuildHRBF,
 		HRBFSkinCluster::outputGeom);
 	McheckErr(returnStatus, "ERROR in attributeAffects with rebuildHRBF\n");
@@ -125,6 +136,9 @@ HRBFSkinCluster::deform( MDataBlock& block,
 	signalRebuildHRBF = (rebuildHRBFStatus != rebuildHRBFStatusNow);
 	MMatrixArray bindTFs; // store just the bind transforms in here.
 
+	MDataHandle exportHRBFCompStatusData = block.inputValue(exportHRBFComp, &returnStatus);
+	McheckErr(returnStatus, "Error getting exportHRBFComp handle\n");
+	int exportHRBFCompStatusNow = exportHRBFCompStatusData.asInt();
 
 	// get HRBF export status
 	MDataHandle HRBFExportSamplesData = block.inputValue(exportHRBFSamples, &returnStatus);
@@ -198,6 +212,13 @@ HRBFSkinCluster::deform( MDataBlock& block,
 		hrbfMan.debugValuesToConsole(exportHRBFValuesStatus);
 	}
 
+	// print HRBF composition if requested
+	if (exportHRBFCompStatus != exportHRBFCompStatusNow) {
+		exportHRBFCompStatus = exportHRBFCompStatusNow;
+		std::cout << "instructed to export HRBF composition" << std::endl;
+		hrbfMan.debugCompositionToConsole();
+	}
+
 	// rebuild HRBFs if needed
 	if (signalRebuildHRBF) {
 		std::cout << "instructed to rebuild HRBFs" << std::endl;
@@ -244,7 +265,10 @@ HRBFSkinCluster::deform( MDataBlock& block,
 
 	// do HRBF corrections
 	if (useHRBFnow != 0) {
+		iter.reset();
 		// TODO: do HRBF correction
+		hrbfMan.compose(transforms, numTransforms);
+		hrbfMan.correct(iter);
 	}
 
 	return returnStatus;
