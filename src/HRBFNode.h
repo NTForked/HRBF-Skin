@@ -110,8 +110,10 @@ public:
 
 	static MObject rebuildHRBF; // for signalling that the user wants the HRBFs recomputed
 	int rebuildHRBFStatus; // for the program to check if it has rebuilt HRBFs or not
-	static MObject exportHRBF; // for exporting HRBF information to text files
-	std::string exportHRBFStatus; // for the program to check if it should export or not
+	static MObject exportHRBFSamples; // for exporting HRBF information to text
+	static MObject exportHRBFValues; // for exporting HRBF voxel information to text
+	std::string exportHRBFSamplesStatus; // for the program to check if it should export or not
+	std::string exportHRBFValuesStatus; // for the program to check if it should export or not
 
 	static MObject useDQ; // for switching between DQ and LBS skinning
 	static MObject useHRBF; // for toggling HRBF correction on and off
@@ -123,7 +125,8 @@ public:
 const MTypeId HRBFSkinCluster::id(0x00080030);
 
 MObject HRBFSkinCluster::rebuildHRBF;
-MObject HRBFSkinCluster::exportHRBF;
+MObject HRBFSkinCluster::exportHRBFSamples;
+MObject HRBFSkinCluster::exportHRBFValues;
 MObject HRBFSkinCluster::useDQ;
 MObject HRBFSkinCluster::useHRBF;
 MObject HRBFSkinCluster::jointParentIdcs;

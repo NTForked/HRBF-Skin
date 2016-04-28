@@ -31,11 +31,13 @@ public:
 	std::vector<float> m_isoVals; // parallel to MItGeometry iter
 	int m_numJoints;
 
-	void compose(); // TODO: implement
+	void compose(); // TODO: fill out and implement
 
 	void correct(); // TODO: fill out and implement
 
-	void debugOutputToFile(std::string nodeName);
+	void debugSamplesToConsole(std::string nodeName);
+	void debugValuesToConsole(std::string nodeName);
+
 };
 
 #endif

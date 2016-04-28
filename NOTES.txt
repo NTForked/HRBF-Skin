@@ -1,3 +1,10 @@
+04/28/2016
+6) catch up
+-HRBF composition
+-HRBF marching
+
+7) make the video thing!
+
 04/27/2016
 4) catch up
 	-must do some cleanup for the bone extremity points and vertex culling
@@ -17,7 +24,7 @@
 		-we'll have to do it through the debugger. ok.
 		-in the meantime, let's change things: it's a bad idea to always export all the HRBFs
 		-TODO: change HRBF to export a named joint instead of all of them [done]
-		-write a python script to visualize
+		-write a python script to visualize [done]
 
 	-finish HRBF build -> matrix solve, fill grids
 		-take some time to write a dedicated HRBF3 class and project [done]
@@ -26,9 +33,11 @@
 		-it should just return 0.0 for anything outside the grid right?
 		-make sure grid size is bigger than compact support r [done]
 		-do a speed test to see if we need to reduce the samples
+			-not HORRIBLY slow in release mode, at least on Calabrese
+			-but still not fast. ok, let's add culling down to 60 samples. [done] -> much faster
 		-instead of remaking the HRBF objects on every compute call, just resize what you already have. [done]
 
-	-test HRBF build by having Maya fart out HRBFs in python readable
+	-test HRBF build by having Maya fart out HRBFs in python readable [done]
 		-although, these could be really, really huge. and we can still only get them out of the debug window
 		-it's ok, we only need like one or two to see if it's right
 
@@ -37,6 +46,10 @@
 	-this will make exporting relatively easy -> well, "as hard as exporting any single HRBF"
 	-should manage all the new inverse TF transforms for querying the individual HRBFs
 	-should handle computing all isovalues at the beginning
+	-build HRBF composition algorithm:
+		-for each HRBF, transform each coordinate A by the bone's matrix
+		-get the nearest cell coordinate B in the global HRBF's grid
+		-use that coordinate B to get a trilinearly interpolated value from the HRBF -> requires using the inverse of the bone matrix, lol
 
 6) perform HRBF marching
 

@@ -5,7 +5,9 @@ void* HRBFSkinCluster::creator()
 	HRBFSkinCluster *cluster = new HRBFSkinCluster();
 	// a little big of HRBF setup:
 	cluster->rebuildHRBFStatus = -1;
-	cluster->exportHRBFStatus = ""; // don't export normally
+	cluster->exportHRBFSamplesStatus = ""; // don't export normally
+	cluster->exportHRBFValuesStatus = ""; // don't export normally
+
 	return cluster;
 }
 
@@ -25,11 +27,17 @@ MStatus HRBFSkinCluster::initialize()
 	returnStatus = addAttribute(HRBFSkinCluster::rebuildHRBF);
 	McheckErr(returnStatus, "ERROR adding rbld attribute\n");
 
-	HRBFSkinCluster::exportHRBF = typedAttr.create("ExportHRBF", "exprt", MFnNumericData::kString,
+	HRBFSkinCluster::exportHRBFSamples = typedAttr.create("ExportHRBFs", "exprtS", MFnNumericData::kString,
 		&returnStatus);
-	McheckErr(returnStatus, "ERROR creating rbld attribute\n");
-	returnStatus = addAttribute(HRBFSkinCluster::exportHRBF);
-	McheckErr(returnStatus, "ERROR adding rbld attribute\n");
+	McheckErr(returnStatus, "ERROR creating exprtS attribute\n");
+	returnStatus = addAttribute(HRBFSkinCluster::exportHRBFSamples);
+	McheckErr(returnStatus, "ERROR adding exprtS attribute\n");
+
+	HRBFSkinCluster::exportHRBFValues = typedAttr.create("ExportHRBFv", "exprtV", MFnNumericData::kString,
+		&returnStatus);
+	McheckErr(returnStatus, "ERROR creating exprtV attribute\n");
+	returnStatus = addAttribute(HRBFSkinCluster::exportHRBFValues);
+	McheckErr(returnStatus, "ERROR adding exprtV attribute\n");
 
 	HRBFSkinCluster::useDQ = numAttr.create("UseDualQuaternions", "useDQ", MFnNumericData::kInt,
 		0, &returnStatus);
@@ -65,9 +73,13 @@ MStatus HRBFSkinCluster::initialize()
 		HRBFSkinCluster::outputGeom);
 	McheckErr(returnStatus, "ERROR in attributeAffects with rebuildHRBF\n");
 
-	returnStatus = attributeAffects(HRBFSkinCluster::exportHRBF,
+	returnStatus = attributeAffects(HRBFSkinCluster::exportHRBFSamples,
 		HRBFSkinCluster::outputGeom);
-	McheckErr(returnStatus, "ERROR in attributeAffects with exportHRBF\n");
+	McheckErr(returnStatus, "ERROR in attributeAffects with exportHRBFSamples\n");
+
+	returnStatus = attributeAffects(HRBFSkinCluster::exportHRBFValues,
+		HRBFSkinCluster::outputGeom);
+	McheckErr(returnStatus, "ERROR in attributeAffects with exportHRBFValues\n");
 
 	returnStatus = attributeAffects(HRBFSkinCluster::useDQ,
 		HRBFSkinCluster::outputGeom);
@@ -115,9 +127,13 @@ HRBFSkinCluster::deform( MDataBlock& block,
 
 
 	// get HRBF export status
-	MDataHandle HRBFExportData = block.inputValue(exportHRBF, &returnStatus);
-	McheckErr(returnStatus, "Error getting exportHRBF handle\n");
-	std::string exportHRBFStatusNow = HRBFExportData.asString().asChar();
+	MDataHandle HRBFExportSamplesData = block.inputValue(exportHRBFSamples, &returnStatus);
+	McheckErr(returnStatus, "Error getting exportHRBFSamples handle\n");
+	std::string exportHRBFSamplesStatusNow = HRBFExportSamplesData.asString().asChar();
+
+	MDataHandle HRBFExportValuesData = block.inputValue(exportHRBFValues, &returnStatus);
+	McheckErr(returnStatus, "Error getting exportHRBFValues handle\n");
+	std::string exportHRBFValuesStatusNow = HRBFExportValuesData.asString().asChar();
 
 	// get skinning type
 	MDataHandle useDQData = block.inputValue(useDQ, &returnStatus);
@@ -166,14 +182,21 @@ HRBFSkinCluster::deform( MDataBlock& block,
 		return MS::kSuccess;
 	}
 
-	// print HRBF if requested
-	if (exportHRBFStatusNow != exportHRBFStatus) {
-		std::cout << "instructed to export HRBF: " << exportHRBFStatusNow.c_str() << std::endl;
-		exportHRBFStatus = exportHRBFStatusNow;
+	// print HRBF samples if requested
+	if (exportHRBFSamplesStatusNow != exportHRBFSamplesStatus) {
+		std::cout << "instructed to export HRBF samples: " << exportHRBFSamplesStatusNow.c_str() << std::endl;
+		exportHRBFSamplesStatus = exportHRBFSamplesStatusNow;
 		// TODO: handle exporting HRBFs to the text file format
-		hrbfMan.debugOutputToFile(exportHRBFStatus);
+		hrbfMan.debugSamplesToConsole(exportHRBFSamplesStatus);
 	}
 
+	// print HRBF values if requested
+	if (exportHRBFValuesStatusNow != exportHRBFValuesStatus) {
+		std::cout << "instructed to export HRBF values: " << exportHRBFValuesStatusNow.c_str() << std::endl;
+		exportHRBFValuesStatus = exportHRBFValuesStatusNow;
+		// TODO: handle exporting HRBFs to the text file format
+		hrbfMan.debugValuesToConsole(exportHRBFValuesStatus);
+	}
 
 	// rebuild HRBFs if needed
 	if (signalRebuildHRBF) {
@@ -203,8 +226,9 @@ HRBFSkinCluster::deform( MDataBlock& block,
 		//for (int i = 0; i < numTransforms; ++i) {
 		//	std::cout << i << ": " << jointNames[i].c_str() << " : " << jointParentIndices[i] << std::endl;
 		//}
+		std::cout << "rebuilding HRBFs... " << std::endl;
 		hrbfMan.buldHRBFs(jointParentIndices, jointNames, bindTFs, weightListHandle, iter, weights);
-
+		std::cout << "done rebuilding!" << std::endl;
 		weightListHandle.jumpToElement(0); // reset this, it's an iterator. trust me.
 		iter.reset(); // reset this iterator so we can go do normal skinning
 	}

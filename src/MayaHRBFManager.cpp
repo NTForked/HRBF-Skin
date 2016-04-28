@@ -94,15 +94,26 @@ void MayaHRBFManager::buldHRBFs(std::vector<int> jointHierarchy, std::vector<std
 
 	/***** set up each individual HRBF *****/
 	for (int i = 0; i < m_numJoints; i++) {
+		std::cout << "setting up " << names[i] << "...";
 		m_HRBFs[i]->compute();
+		std::cout << "done!" << std::endl;
 	}
 
 }
 
-void MayaHRBFManager::debugOutputToFile(std::string nodeName) {
+void MayaHRBFManager::debugSamplesToConsole(std::string nodeName) {
 	for (int i = 0; i < m_numJoints; i++) {
 		if (m_HRBFs[i]->m_name == nodeName) {
 			m_HRBFs[i]->printHRBFSamplingDebug();
+			break;
+		}
+	}
+}
+
+void MayaHRBFManager::debugValuesToConsole(std::string nodeName) {
+	for (int i = 0; i < m_numJoints; i++) {
+		if (m_HRBFs[i]->m_name == nodeName) {
+			m_HRBFs[i]->printHRBF();
 			break;
 		}
 	}

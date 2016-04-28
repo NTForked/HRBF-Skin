@@ -10,6 +10,7 @@
 
 #define HRBF_RES 32
 #define CULL_H 0.05f
+#define SAMPLE_CAP 60
 
 class MayaHRBF {
 public:
@@ -18,17 +19,20 @@ public:
 
 	void setupBones();
 	void addVertex(MPoint pos, MVector nor); // take vertex into local space. handle culling.
-	bool isExtremity();
-	void closeExtremities();
 	void compute();
 
 	void printHRBFSamplingDebug();
 	void printHRBF(); // TODO: implement!
 
-	// members
 	std::string m_name;
 	MayaHRBF* m_parent;
 	std::vector<MayaHRBF*> m_children;
+
+	void reduceSamples();
+	bool isExtremity();
+	void closeExtremities();
+
+	// members
 	int m_numChildren;
 
 	MMatrix m_invBindTF;

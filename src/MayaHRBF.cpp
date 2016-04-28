@@ -180,21 +180,6 @@ void MayaHRBF::compute() {
 	/***** compute extremity closing samples *****/
 	closeExtremities();
 
-	/***** compute unknowns (equation 1/vaillant's HRBF resources) *****/
-	std::vector<MVector> positions;
-	for (int i = 0; i < numSamples; i++) {
-		positions.push_back(m_posSamples[i]); // push back as MVector
-	}
-
-	std::vector<MVector> normals(m_norSamples);
-
-	for (int i = 0; i < numExtremities; i++) {
-		positions.push_back(m_posExtrem[i]);
-		normals.push_back(m_norExtrem[i]);
-	}
-	
-	HRBF3 hrbf(positions, normals); // set up hrbf
-
 	/***** compute reparameterization radius R *****/
 	// - if there are only two bones, do point-line distance
 	// - if there are more bones, do distance to the root bone
@@ -280,6 +265,22 @@ void MayaHRBF::compute() {
 		maxX + pad, maxY + pad, maxZ + pad);
 	mf_gradMag2->clear(0.0f);
 
+	/***** compute unknowns (equation 1/vaillant's HRBF resources) *****/
+	reduceSamples();
+	numSamples = m_posSamples.size();
+	std::vector<MVector> positions;
+	for (int i = 0; i < numSamples; i++) {
+		positions.push_back(m_posSamples[i]); // push back as MVector
+	}
+
+	std::vector<MVector> normals(m_norSamples);
+
+	for (int i = 0; i < numExtremities; i++) {
+		positions.push_back(m_posExtrem[i]);
+		normals.push_back(m_norExtrem[i]);
+	}
+	HRBF3 hrbf(positions, normals); // set up hrbf
+
 	/***** compute HRBF values for every cell in the grids *****/
 	// - reparameterize - see Vaillant's resources
 	// - also do the gradients
@@ -357,4 +358,23 @@ void MayaHRBF::printHRBFSamplingDebug() {
 	}
 
 	debugSplat.exportToDebugString(m_name);
+}
+
+void MayaHRBF::printHRBF() {
+	mf_vals->exportToDebugString(m_name);
+}
+
+void MayaHRBF::reduceSamples() {
+	int numSamples = m_posSamples.size();
+	if (numSamples < SAMPLE_CAP) return;
+	
+	// randomly remove samples until we get beneath the cap
+	int randIDX;
+	int numSamplesNow = numSamples;
+	for (int i = 0; i < numSamples - SAMPLE_CAP; i++) {
+		randIDX = rand() % numSamplesNow;
+		m_posSamples.erase(m_posSamples.begin() + randIDX);
+		m_norSamples.erase(m_norSamples.begin() + randIDX);
+		numSamplesNow--;
+	}
 }
