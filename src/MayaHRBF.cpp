@@ -11,18 +11,6 @@ MayaHRBF::MayaHRBF(std::string &name, MMatrix &invBindTF) {
 	m_jointPositionWorld.z = m_bindTF(3, 2);
 	m_jointPositionLocal = m_jointPositionWorld * invBindTF;
 
-	// some test things because idk what maya is even doing anymore
-	//MMatrix IDhopefully1 = invBindTF * m_bindTF;
-	//MMatrix IDhopefully2 = m_bindTF * invBindTF;
-	//
-	//MPoint p1(1.0, 1.0, 1.0);
-	//MPoint p2(2.0, 2.0, 2.0);
-	//MVector v1 = p2 - p1;
-	//MVector v2 = p1 - p2;
-	//MVector v1s1 = v1 * 2.0;
-	//MVector v1s2 = 2.0 * v1;
-
-
 	f_vals = NULL;
 	f_gradX = NULL;
 	f_gradY = NULL;
@@ -205,10 +193,17 @@ void MayaHRBF::compute() {
 		minX - padX, minY - padY, minZ - padZ,
 		maxX + padX, maxY + padY, maxZ + padZ);
 
+	/***** compute reparameterization R *****/
+	// - if there are only two bones, do point-line distance
+	// - if there are more bones, do distance to the root bone
+	// - or... can we just do it all with distance to root bone?
+	// - it's the furthest distance between a sample point and the bone
+
+
 	/***** compute unknowns (equation 1/vaillant's HRBF resources) *****/
 
 	/***** compute HRBF values for every cell in the grids *****/
-	// - don't forget to reparameterize
+	// - reparameterize
 	// - also do the gradients
 	// - see Vaillant's resources
 	
@@ -240,7 +235,7 @@ void MayaHRBF::printHRBFSamplingDebug() {
 		sample = m_posSamples[i];
 		norDisp = sample + m_norSamples[i] * norDispMag;
 		if (!debugSplat.setByCoordinate(sample.x, sample.y, sample.z, 1.0)) {
-			std::cout << "splat fail\n";
+			std::cout << "splat fail\n"; // shouldn't happen, but leave this for debugging anyway
 		}
 		if (!debugSplat.setByCoordinate(norDisp.x, norDisp.y, norDisp.z, 2.0)) {
 			std::cout << "splat fail\n";
@@ -258,7 +253,5 @@ void MayaHRBF::printHRBFSamplingDebug() {
 		}
 	}
 
-	// export the debug grid
-	//std::cout << "exporting " << m_name.c_str() << std::endl;
 	debugSplat.exportToDebugString(m_name);
 }

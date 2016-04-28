@@ -5,6 +5,7 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include <maya/MVector.h>
 
 class FloatGrid3D {
 public:
@@ -31,6 +32,7 @@ public:
 	bool checkBounds(float x, float y, float z);
 	void coordToIDX(float x, float y, float z, int &ix, int &iy, int &iz);
 	void idxToCoord(int ix, int iy, int iz, float &x, float &y, float &z);
+	MVector idxToMVector(int ix, int iy, int iz);
 
 	/***************** accessor/setters *****************/
 	void clear(float val); // set all cells to val

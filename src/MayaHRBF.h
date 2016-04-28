@@ -4,6 +4,7 @@
 #include <maya/MVector.h>
 #include <maya/MMatrix.h>
 #include "FloatGrid3D.hpp"
+#include "hrbf3.hpp"
 #include <vector>
 #include <algorithm>
 
@@ -46,6 +47,10 @@ public:
 	std::vector<MVector> m_jointDirLocals; // direction from this joint to given joint
 	MPoint m_jointPositionLocal; // this joint in local space
 	MPoint m_jointPositionWorld; // this joint in world space
+
+	// HRBF and reparameterization stuff
+	double m_r; // for compact support
+
 
 	FloatGrid3D *f_vals;
 	FloatGrid3D *f_gradX;

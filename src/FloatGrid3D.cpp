@@ -69,6 +69,16 @@ void FloatGrid3D::idxToCoord(int ix, int iy, int iz,
 	z = iz * m_cellWidth.z + m_min.z;
 }
 
+MVector FloatGrid3D::idxToMVector(int ix, int iy, int iz) {
+	
+	MVector ret;
+	ret.x = ix * m_cellWidth.x + m_min.x;
+	ret.y = iy * m_cellWidth.y + m_min.y;
+	ret.z = iz * m_cellWidth.z + m_min.z;
+	return ret;
+}
+
+
 void FloatGrid3D::clear(float val) {
 
 	for (int i = 0; i < m_numCells; i++) {

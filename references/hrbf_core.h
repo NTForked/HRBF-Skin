@@ -48,17 +48,17 @@ public:
     {
         assert( points.size() == normals.size() );
 
-        int nb_points           = points.size();
-        int nb_hrbf_constraints = (Dim+1)*nb_points;
-        int nb_constraints      = nb_hrbf_constraints;
+        int nb_points           = points.size(); // points
+        int nb_hrbf_constraints = (Dim+1)*nb_points; // dim is 3 in case we care about
+        int nb_constraints      = nb_hrbf_constraints; // normals
         int nb_coeffs           = (Dim+1)*nb_points;
 
         _node_centers.resize(Dim, nb_points);
-        _betas.       resize(Dim, nb_points);
-        _alphas.      resize(nb_points);
+        _betas.       resize(Dim, nb_points); // betas are vectors
+        _alphas.      resize(nb_points); // alphas are scalars
 
         // Assemble the "design" and "value" matrix and vector
-        MatrixXX  D(nb_constraints, nb_coeffs);
+        MatrixXX  D(nb_constraints, nb_coeffs); // the main matrix, huh? this one's pretty big.
         VectorX   f(nb_constraints);
         VectorX   x(nb_coeffs);
 
@@ -66,12 +66,13 @@ public:
         for(int i = 0; i < nb_points; ++i)
             _node_centers.col(i) = points[i];
 
+        // assemble the D matrix
         for(int i = 0; i < nb_points; ++i)
         {
             Vector p = points[i];
             Vector n = normals[i];
 
-            int io = (Dim+1) * i;
+            int io = (Dim+1) * i; // indexer into the matrix
             f(io) = 0;
             f.template segment<Dim>(io + 1) = n;
 

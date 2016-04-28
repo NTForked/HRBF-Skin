@@ -9,6 +9,8 @@ set(SOURCE_FILES
  "MayaHRBF.h" 
  "FloatGrid3D.hpp"
  "FloatGrid3D.cpp"
+ "hrbf3.hpp"
+ "hrbf3.cpp"
 )
 
 find_package(Maya REQUIRED)
