@@ -22,17 +22,19 @@
 	-finish HRBF build -> matrix solve, fill grids
 		-take some time to write a dedicated HRBF3 class and project [done]
 		-we'll compare this with Vaillant's implementation [done]
-		-reparameterize and fill the grids
+		-reparameterize and fill the grids [done]
 		-it should just return 0.0 for anything outside the grid right?
-		-make sure grid size is bigger than compact support r
+		-make sure grid size is bigger than compact support r [done]
+		-do a speed test to see if we need to reduce the samples
+		-instead of remaking the HRBF objects on every compute call, just resize what you already have. [done]
 
 	-test HRBF build by having Maya fart out HRBFs in python readable
 		-although, these could be really, really huge. and we can still only get them out of the debug window
-		-it's ok, we only need like one or two
+		-it's ok, we only need like one or two to see if it's right
 
 5) build the HRBF manager
 	-should handle building the global gradient on another 3D grid from compositions -> we're justing using MAX here
-	-this will make exporting relatively easy
+	-this will make exporting relatively easy -> well, "as hard as exporting any single HRBF"
 	-should manage all the new inverse TF transforms for querying the individual HRBFs
 	-should handle computing all isovalues at the beginning
 

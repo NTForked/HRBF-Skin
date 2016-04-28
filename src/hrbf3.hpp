@@ -25,7 +25,10 @@ public:
 	~HRBF3();
 
 	float evaluate(MVector pos);
+	float evaluate(float x, float y, float z);
+
 	MVector gradient(MVector pos);
+	void gradient(float x, float y, float z, float &dx, float &dy, float &dz);
 
 private:
 	// members

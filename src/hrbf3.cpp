@@ -77,17 +77,42 @@ HRBF3::~HRBF3() {
 
 float HRBF3::evaluate(MVector pos) {
 	float ret = 0;
-	vec3 x;
-	x[0] = pos.x;
-	x[1] = pos.y;
-	x[2] = pos.z;
+	vec3 p;
+	p[0] = pos.x;
+	p[1] = pos.y;
+	p[2] = pos.z;
 	int numNodes = m_node_centers.cols();
 	vec3 diff;
 	double l;
 
 	for (int i = 0; i < numNodes; ++i)
 	{
-		diff = x - m_node_centers.col(i);
+		diff = p - m_node_centers.col(i);
+		l = diff.norm();
+
+		if (l > 0)
+		{
+			ret += m_alphas(i) * l * l * l; // phi = x^3
+			ret += m_betas.col(i).dot(diff) * 3.0 * l; // d_phi(l) / l = 3x^2 / x = 3x
+		}
+	}
+
+	return ret;
+}
+
+float HRBF3::evaluate(float x, float y, float z) {
+	float ret = 0;
+	vec3 p;
+	p[0] = x;
+	p[1] = y;
+	p[2] = z;
+	int numNodes = m_node_centers.cols();
+	vec3 diff;
+	double l;
+
+	for (int i = 0; i < numNodes; ++i)
+	{
+		diff = p - m_node_centers.col(i);
 		l = diff.norm();
 
 		if (l > 0)
@@ -102,10 +127,10 @@ float HRBF3::evaluate(MVector pos) {
 
 MVector HRBF3::gradient(MVector pos) {
 	vec3 grad = vec3::Zero();
-	vec3 x;
-	x[0] = pos.x;
-	x[1] = pos.y;
-	x[2] = pos.z;
+	vec3 p;
+	p[0] = pos.x;
+	p[1] = pos.y;
+	p[2] = pos.z;
 
 	vec3 node, beta, diff, diffNormalized;
 	double alpha, l, dphi, ddphi, alpha_dphi, bDotd_l, squared_l;
@@ -116,7 +141,7 @@ MVector HRBF3::gradient(MVector pos) {
 		node = m_node_centers.col(i);
 		beta = m_betas.col(i);
 		alpha = m_alphas(i);
-		diff = x - node;
+		diff = p - node;
 
 		diffNormalized = diff;
 		l = diff.norm();
@@ -137,4 +162,45 @@ MVector HRBF3::gradient(MVector pos) {
 		}
 	}
 	return MVector(grad[0], grad[1], grad[2]);
+}
+
+void HRBF3::gradient(float x, float y, float z, float &dx, float &dy, float &dz) {
+	vec3 grad = vec3::Zero();
+	vec3 p;
+	p[0] = x;
+	p[1] = y;
+	p[2] = z;
+
+	vec3 node, beta, diff, diffNormalized;
+	double alpha, l, dphi, ddphi, alpha_dphi, bDotd_l, squared_l;
+
+	int nb_nodes = m_node_centers.cols();
+	for (int i = 0; i < nb_nodes; i++)
+	{
+		node = m_node_centers.col(i);
+		beta = m_betas.col(i);
+		alpha = m_alphas(i);
+		diff = p - node;
+
+		diffNormalized = diff;
+		l = diff.norm();
+
+		if (l > 0.00001)
+		{
+			diffNormalized.normalize();
+			dphi = 3.0 * l * l;
+			ddphi = 6.0 * l;
+
+			alpha_dphi = alpha * dphi;
+
+			bDotd_l = beta.dot(diff) / l;
+			squared_l = diff.squaredNorm();
+
+			grad += alpha_dphi * diffNormalized;
+			grad += bDotd_l * (ddphi * diffNormalized - diff * dphi / squared_l) + beta * dphi / l;
+		}
+	}
+	dx = grad[0];
+	dy = grad[1];
+	dz = grad[2];
 }

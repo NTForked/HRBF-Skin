@@ -49,14 +49,14 @@ public:
 	MPoint m_jointPositionWorld; // this joint in world space
 
 	// HRBF and reparameterization stuff
-	double m_r; // for compact support
+	float m_r; // for compact support
 
 
-	FloatGrid3D *f_vals;
-	FloatGrid3D *f_gradX;
-	FloatGrid3D *f_gradY;
-	FloatGrid3D *f_gradZ;
-	FloatGrid3D *f_gradMag;
+	FloatGrid3D *mf_vals;
+	FloatGrid3D *mf_gradX;
+	FloatGrid3D *mf_gradY;
+	FloatGrid3D *mf_gradZ;
+	FloatGrid3D *mf_gradMag2;
 };
 
 #endif

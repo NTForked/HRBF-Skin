@@ -11,20 +11,27 @@ MayaHRBF::MayaHRBF(std::string &name, MMatrix &invBindTF) {
 	m_jointPositionWorld.z = m_bindTF(3, 2);
 	m_jointPositionLocal = m_jointPositionWorld * invBindTF;
 
-	f_vals = NULL;
-	f_gradX = NULL;
-	f_gradY = NULL;
-	f_gradZ = NULL;
-	f_gradMag = NULL;
+	mf_vals = new FloatGrid3D(HRBF_RES, HRBF_RES, HRBF_RES, 
+		-1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f);
+	mf_gradX = new FloatGrid3D(HRBF_RES, HRBF_RES, HRBF_RES,
+		-1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f);
+	mf_gradY = new FloatGrid3D(HRBF_RES, HRBF_RES, HRBF_RES,
+		-1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f);
+	mf_gradZ = new FloatGrid3D(HRBF_RES, HRBF_RES, HRBF_RES,
+		-1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f);
+	mf_gradMag2 = new FloatGrid3D(HRBF_RES, HRBF_RES, HRBF_RES,
+		-1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f);
+
+	m_r = -1.0f;
 	return;
 }
 
 MayaHRBF::~MayaHRBF() {
-	if (f_vals != NULL) delete f_vals;
-	if (f_gradX != NULL) delete f_gradX;
-	if (f_gradY != NULL) delete f_gradY;
-	if (f_gradZ != NULL) delete f_gradZ;
-	if (f_gradMag != NULL) delete f_gradMag;
+	if (mf_vals != NULL) delete mf_vals;
+	if (mf_gradX != NULL) delete mf_gradX;
+	if (mf_gradY != NULL) delete mf_gradY;
+	if (mf_gradZ != NULL) delete mf_gradZ;
+	if (mf_gradMag2 != NULL) delete mf_gradMag2;
 
 }
 
@@ -134,12 +141,90 @@ void MayaHRBF::closeExtremities() {
 	}
 }
 
+float compact(float f, float r) {
+	if (f < -r) return 1.0f;
+	if (f > r) return 0.0f;
+	// (-3/16)*(f/radius)^5+(5/8)*(f/radius)^3-(15/16)*(f/radius) + 1/2
+	float f_div_r = f / r;
+	float f_div_r2 = f_div_r * f_div_r;
+	float f_div_r4 = f_div_r2 * f_div_r2;
+	return (-3.0f / 16.0f) * f_div_r4 * f_div_r + (5.0f / 8.0f) * f_div_r2 * f_div_r - (15.0f / 16.0f) * f_div_r + 0.5f;
+}
+
+void dcompact(float f, float r, float &dx, float &dy, float &dz) {
+	if (f < -r || f > r) {
+		dx = 0.0f;
+		dy = 0.0f;
+		dz = 0.0f;
+		return;
+	}
+	// (-15/(16r))*(f/r)^4 + (15/(8*r))*(f/r)^2 - (15/(16r))
+	float f_div_r = f / r;
+	float f_div_r2 = f_div_r * f_div_r;
+	float f_div_r4 = f_div_r2 * f_div_r2;
+	float tmp = (-15.0f / (16.0f*r));
+	float scale = tmp * f_div_r4 + (15.0f / 8.0f * r) * f_div_r2 + tmp;
+	dx *= scale;
+	dy *= scale;
+	dz *= scale;
+}
+
 void MayaHRBF::compute() {
+
+	// don't do anything if there are no sample points. happens sometimes.
+	int numSamples = m_posSamples.size();
+	int numExtremities = m_posExtrem.size();
+
+	if (numSamples == 0) return;
 
 	/***** compute extremity closing samples *****/
 	closeExtremities();
 
-	/***** compute AABB. pad out to + 1/32 on each side. build grids *****/
+	/***** compute unknowns (equation 1/vaillant's HRBF resources) *****/
+	std::vector<MVector> positions;
+	for (int i = 0; i < numSamples; i++) {
+		positions.push_back(m_posSamples[i]); // push back as MVector
+	}
+
+	std::vector<MVector> normals(m_norSamples);
+
+	for (int i = 0; i < numExtremities; i++) {
+		positions.push_back(m_posExtrem[i]);
+		normals.push_back(m_norExtrem[i]);
+	}
+	
+	HRBF3 hrbf(positions, normals); // set up hrbf
+
+	/***** compute reparameterization radius R *****/
+	// - if there are only two bones, do point-line distance
+	// - if there are more bones, do distance to the root bone
+	// http://paulbourke.net/geometry/pointlineplane/
+	if (m_numChildren == 1) {
+		float u;
+		MPoint P1 = m_jointPositionLocal;
+		MPoint P2 = m_jointPosLocals[0];
+		MPoint P3;
+		MVector boneLength = P2 - P1;
+		MPoint nearestPt;
+		float boneLength2 = boneLength.length();
+		boneLength2 *= boneLength2;
+		float candidate;
+		for (int i = 0; i < numSamples; i++) {
+			P3 = m_posSamples[i];
+			u = (P3.x - P1.x) * boneLength.x + (P3.y - P1.y) * boneLength.y + (P3.z - P1.z) * boneLength.z;
+			u /= boneLength2;
+			u = std::min(std::max(u, 0.0f), 1.0f); // clamp
+			nearestPt = P1 + boneLength * u;
+			m_r = std::max(m_r, (float)(nearestPt - P3).length());
+		}
+	}
+	else {
+		for (int i = 0; i < numSamples; i++) {
+			m_r = std::max(m_r, (float)(m_posSamples.at(i) - m_jointPositionLocal).length());
+		}
+	}
+
+	/***** compute AABB. pad out to + r / 2 on each side. build grids *****/
 	int numPositions = m_posSamples.size();
 	float minX, minY, minZ, maxX, maxY, maxZ;
 	minX = HUGE_VAL; maxX = -HUGE_VAL;
@@ -169,53 +254,71 @@ void MayaHRBF::compute() {
 		maxZ = std::max(maxZ, (float)pos.z);
 	}
 
-	float padX = (maxX - minX) / (float)HRBF_RES;
-	float padY = (maxY - minY) / (float)HRBF_RES;
-	float padZ = (maxZ - minZ) / (float)HRBF_RES;
+	float pad = m_r / 2.0f;
+	mf_vals->resizeAABB(
+		minX - pad, minY - pad, minZ - pad,
+		maxX + pad, maxY + pad, maxZ + pad);
+	mf_vals->clear(0.0f);
 
-	f_vals = new FloatGrid3D(HRBF_RES, HRBF_RES, HRBF_RES,
-		minX - padX, minY - padY, minZ - padZ,
-		maxX + padX, maxY + padY, maxZ + padZ);
+	mf_gradX->resizeAABB(
+		minX - pad, minY - pad, minZ - pad,
+		maxX + pad, maxY + pad, maxZ + pad);
+	mf_gradX->clear(0.0f);
 
-	f_gradX = new FloatGrid3D(HRBF_RES, HRBF_RES, HRBF_RES,
-		minX - padX, minY - padY, minZ - padZ,
-		maxX + padX, maxY + padY, maxZ + padZ);
+	mf_gradY->resizeAABB(
+		minX - pad, minY - pad, minZ - pad,
+		maxX + pad, maxY + pad, maxZ + pad);
+	mf_gradY->clear(0.0f);
 
-	f_gradY = new FloatGrid3D(HRBF_RES, HRBF_RES, HRBF_RES,
-		minX - padX, minY - padY, minZ - padZ,
-		maxX + padX, maxY + padY, maxZ + padZ);
+	mf_gradZ->resizeAABB(
+		minX - pad, minY - pad, minZ - pad,
+		maxX + pad, maxY + pad, maxZ + pad);
+	mf_gradZ->clear(0.0f);
 
-	f_gradZ = new FloatGrid3D(HRBF_RES, HRBF_RES, HRBF_RES,
-		minX - padX, minY - padY, minZ - padZ,
-		maxX + padX, maxY + padY, maxZ + padZ);
-
-	f_gradMag = new FloatGrid3D(HRBF_RES, HRBF_RES, HRBF_RES,
-		minX - padX, minY - padY, minZ - padZ,
-		maxX + padX, maxY + padY, maxZ + padZ);
-
-	/***** compute reparameterization R *****/
-	// - if there are only two bones, do point-line distance
-	// - if there are more bones, do distance to the root bone
-	// - or... can we just do it all with distance to root bone?
-	// - it's the furthest distance between a sample point and the bone
-
-
-	/***** compute unknowns (equation 1/vaillant's HRBF resources) *****/
+	mf_gradMag2->resizeAABB(
+		minX - pad, minY - pad, minZ - pad,
+		maxX + pad, maxY + pad, maxZ + pad);
+	mf_gradMag2->clear(0.0f);
 
 	/***** compute HRBF values for every cell in the grids *****/
-	// - reparameterize
+	// - reparameterize - see Vaillant's resources
 	// - also do the gradients
-	// - see Vaillant's resources
-	
+	float xf, yf, zf;
+	float dx, dy, dz;
+	float val;
+	float mag;
+	for (int x = 0; x < HRBF_RES; x++) {
+		for (int y = 0; y < HRBF_RES; y++) {
+			for (int z = 0; z < HRBF_RES; z++) {
+				// get coordinates
+				mf_vals->idxToCoord(x, y, z, xf, yf, zf);
+
+				// plug into HRBF solver
+				val = hrbf.evaluate(xf, yf, zf);
+				hrbf.gradient(xf, yf, zf, dx, dy, dz);
+
+				// reparameterize
+				val = compact(val, m_r);
+				dcompact(val, m_r, dx, dy, dz);
+
+				// shove into the grids
+				mf_vals->setCell(x, y, z, val);
+				mf_gradX->setCell(x, y, z, dx);
+				mf_gradY->setCell(x, y, z, dy);
+				mf_gradZ->setCell(x, y, z, dz);
+				mf_gradMag2->setCell(x, y, z, dx * dx * dz * dz * dy * dy);
+			}
+		}
+	}
 }
 
 void MayaHRBF::printHRBFSamplingDebug() {
-	float minX = f_vals->m_min.x;
-	float minY = f_vals->m_min.y;
-	float minZ = f_vals->m_min.z;
-	float maxX = f_vals->m_max.x;
-	float maxY = f_vals->m_max.y;
-	float maxZ = f_vals->m_max.z;
+	float minX = mf_vals->m_min.x;
+	float minY = mf_vals->m_min.y;
+	float minZ = mf_vals->m_min.z;
+	float maxX = mf_vals->m_max.x;
+	float maxY = mf_vals->m_max.y;
+	float maxZ = mf_vals->m_max.z;
 
 	float norDispMag = MVector(maxX - minX, maxY - minY, maxZ - minZ).length() / (float)HRBF_RES;
 
