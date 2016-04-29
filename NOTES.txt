@@ -1,3 +1,8 @@
+04/29/2016
+1) debug the crash-on-startup problem
+-at least part of it was that we saved scenefiles with some attribs messed with -> don't do this
+-also, having compose take in a joint count that might not be accurate to what compose knows.
+
 04/28/2016
 6) catch up
 -export HRBF grad and use sliced plotting to look at a slice [done]
@@ -37,6 +42,7 @@ Debugging
 -gonna try slow splatting again, see if it helps
 -came up with faster, fuill coverage splatting. slow was too slow.
 -seriously considering just manually evaluating HRBF for every point... hm... -> ok no stupid typo
+-ok, so at least part of the problem was:
 
 
 7) make the video thing!

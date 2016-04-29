@@ -4,12 +4,12 @@ void* HRBFSkinCluster::creator()
 {
 	HRBFSkinCluster *cluster = new HRBFSkinCluster();
 	// a little big of HRBF setup:
-	cluster->rebuildHRBFStatus = -1; // force rebuild on load
+	cluster->rebuildHRBFStatus = 0; // rebuild manually
 	cluster->exportHRBFSamplesStatus = ""; // don't export normally
 	cluster->exportHRBFValuesStatus = ""; // don't export normally
 
 	cluster->exportCompositionStatus = 0; // default value. don't export unless asked.
-	
+	cluster->hrbfMan = MayaHRBFManager();
 	return cluster;
 }
 
@@ -24,7 +24,7 @@ MStatus HRBFSkinCluster::initialize()
 
 	MStatus returnStatus;
 	HRBFSkinCluster::rebuildHRBF = numAttr.create("RebuildHRBF", "rbld", MFnNumericData::kInt,
-		1, &returnStatus);
+		0, &returnStatus);
 	McheckErr(returnStatus, "ERROR creating rbld attribute\n");
 	returnStatus = addAttribute(HRBFSkinCluster::rebuildHRBF);
 	McheckErr(returnStatus, "ERROR adding rbld attribute\n");
@@ -210,7 +210,7 @@ HRBFSkinCluster::deform( MDataBlock& block,
 	if (weightListHandle.elementCount() == 0) {
 		// no weights - nothing to do
 		std::cout << "no weights!" << std::endl;
-		rebuildHRBFStatus = rebuildHRBFStatusNow - 1; // HRBFs will need to rebuilt no matter what
+		//rebuildHRBFStatus = rebuildHRBFStatusNow - 1; // HRBFs will need to rebuilt no matter what
 		return MS::kSuccess;
 	}
 
@@ -243,7 +243,7 @@ HRBFSkinCluster::deform( MDataBlock& block,
 	if ((checkHRBFHereNow - checkHRBFHere).length() > 0.0001) {
 		if (hrbfMan.m_HRBFs.size() == numTransforms) {
 			std::cout << "checking HRBF at x:" << data[0] << " y: " << data[1] << " z: " << data[2] << std::endl;
-			hrbfMan.compose(boneTFs, numTransforms);
+			hrbfMan.compose(boneTFs);
 			float val = 0.0f;
 			float dx = 0.0f;
 			float dy = 0.0f;
@@ -308,7 +308,7 @@ HRBFSkinCluster::deform( MDataBlock& block,
 	// do HRBF corrections
 	if (useHRBFnow != 0) {
 		if (hrbfMan.m_HRBFs.size() == numTransforms) {
-			hrbfMan.compose(boneTFs, numTransforms);
+			hrbfMan.compose(boneTFs);
 			iter.reset();
 			hrbfMan.correct(iter);
 		}

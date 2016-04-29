@@ -120,7 +120,7 @@ void MayaHRBFManager::buildHRBFs(std::vector<int> jointHierarchy, std::vector<st
 
 	std::cout << "computing iso values..." << std::endl;
 	// compute isovalues
-	compose(transforms, m_numJoints);
+	compose(transforms);
 	m_isoVals.resize(m_numISOs);
 
 	iter.reset();
@@ -146,7 +146,7 @@ void MayaHRBFManager::buildHRBFs(std::vector<int> jointHierarchy, std::vector<st
 	std::cout << "iso avg: " << iso_avg / (float)m_numISOs << std::endl;
 }
 
-void MayaHRBFManager::compose(MMatrixArray &transforms, int numTransforms) {
+void MayaHRBFManager::compose(MMatrixArray &transforms) {
 	// compute matrix inverses for later
 	//MMatrixArray inv;
 	//for (int i = 0; i < numTransforms; i++) {
@@ -166,7 +166,7 @@ void MayaHRBFManager::compose(MMatrixArray &transforms, int numTransforms) {
 	maxs.resize(m_numJoints);
 
 
-	for (int i = 0; i < numTransforms; i++) {
+	for (int i = 0; i < m_numJoints; i++) {
 		if (m_HRBFs[i]->m_posSamples.size() < 1) continue;
 		//if (m_HRBFs[i]->m_name != "LeftLeg" && m_HRBFs[i]->m_name != "RightLeg") continue; // debug
 		m_HRBFs[i]->mf_vals->getWorldAABB(transforms[i], minLocal, maxLocal);
@@ -226,7 +226,7 @@ void MayaHRBFManager::compose(MMatrixArray &transforms, int numTransforms) {
 	// for each grid in the manager, compute its AABB in world space
 	// then march over every cube at these indices in world space and compute interp val
 
-	for (int i = 0; i < numTransforms; i++) {
+	for (int i = 0; i < m_numJoints; i++) {
 		MayaHRBF *grid = m_HRBFs[i];
 		MMatrix toLocal = transforms[i].inverse();
 		// compute cell indices of world AABB
@@ -427,6 +427,6 @@ void MayaHRBFManager::debugValuesToConsole(std::string nodeName) {
 }
 
 void MayaHRBFManager::debugCompositionToConsole(MMatrixArray &transforms, int numTransforms) {
-	compose(transforms, numTransforms);
+	compose(transforms);
 	mf_vals->exportToDebugString("composed HRBF");
 }

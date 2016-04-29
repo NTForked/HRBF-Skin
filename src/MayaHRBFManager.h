@@ -30,7 +30,7 @@ public:
 		MArrayDataHandle& weightListHandle, MItGeometry& iter, MObject &weights);
 	// we need weights to access things in the weightListHandle
 
-	void compose(MMatrixArray &transforms, int numTransforms); // compose the HRBFs
+	void compose(MMatrixArray &transforms); // compose the HRBFs
 	void correct(MItGeometry& iter);
 
 	void debugSamplesToConsole(std::string nodeName);
