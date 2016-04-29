@@ -223,7 +223,7 @@ void MayaHRBFManager::compose(MMatrixArray &transforms) {
 	//  		-query grid for value at that cell coordinate in local space
 	//			-max onto grid
 
-	/*********** fast splat 2 - more accurate, coverage guaranteed, and should be faster ****************/
+	/*********** splat ****************/
 	// for each grid in the manager, compute its AABB in world space
 	// then march over every cube at these indices in world space and compute interp val
 
@@ -241,19 +241,24 @@ void MayaHRBFManager::compose(MMatrixArray &transforms) {
 		// walk over all those cell points and sample at each one
 		for (int x = x0; x < x1; x++) {
 			for (int y = y0; y < y1; y++) {
+				//#pragma omp parallel for // doesn't seem to help much
+				float val;
+				float dx;
+				float dy;
+				float dz;
+				float mag;
+				float currVal;
+				float currMag;
+				MPoint worldCoord;
+				MPoint localCoord;
 				for (int z = z0; z < z1; z++) {
 					// transform coordinate into local space
-					MPoint worldCoord = mf_vals->idxToCoord(x, y, z);
-					MPoint localCoord = worldCoord * toLocal;
-					float val = 0.0f;
-					float dx = 0.0f;
-					float dy = 0.0f;
-					float dz = 0.0f;
-					float mag = 0.0f;
+					worldCoord = mf_vals->idxToCoord(x, y, z);
+					localCoord = worldCoord * toLocal;
 					grid->query(localCoord, val, dx, dy, dz, mag);
 
-					float currVal = mf_vals->getCell(x, y, z);
-					float currMag = mf_gradMag->getCell(x, y, z);
+					currVal = mf_vals->getCell(x, y, z);
+					currMag = mf_gradMag->getCell(x, y, z);
 					if (val > currVal) {
 						mf_vals->setCell(x, y, z, val);
 					}
@@ -268,97 +273,6 @@ void MayaHRBFManager::compose(MMatrixArray &transforms) {
 		}
 	}
 	return;
-
-	/*********** slow splat - more accurate, coverage guaranteed ****************/
-	/*
-	// but... too slow! what to do?
-	for (int x = 0; x < HRBF_COMPRES; x++) {
-		for (int y = 0; y < HRBF_COMPRES; y++) {
-			#pragma omp parallel for
-			for (int z = 0; z < HRBF_COMPRES; z++) {
-				MayaHRBF *grid;
-				MMatrix toWorld;
-				MMatrix toLocal;
-				for (int i = 0; i < numTransforms; i++) {
-					grid = m_HRBFs[i];
-					toWorld = transforms[i];
-					toLocal = toWorld.inverse();
-					MPoint world1 = mf_vals->idxToCoord(x, y, z);
-
-					// transform this coordinate to local space for the current HRBF
-					MPoint local1 = world1 * toLocal;
-					float val = 0.0f;
-					float dx = 0.0f;
-					float dy = 0.0f;
-					float dz = 0.0f;
-					float mag = 0.0f;
-					grid->query(local1, val, dx, dy, dz, mag);
-
-					float currVal = mf_vals->getCell(x, y, z);
-					float currMag = mf_gradMag->getCell(x, y, z);
-					if (val > currVal) {
-						mf_vals->setByCoordinate(x, y, z, val);
-					}
-					if (mag > currMag) {
-						mf_gradMag->setByCoordinate(x, y, z, mag);
-						mf_gradX->setByCoordinate(x, y, z, dx);
-						mf_gradY->setByCoordinate(x, y, z, dy);
-						mf_gradZ->setByCoordinate(x, y, z, dz);
-					}
-				}
-			}
-		}
-	}
-	return; */
-
-	/********* fast splat - less accurate, coverage NOT guaranteed! **************/
-	/*
-	for (int i = 0; i < numTransforms; i++) {
-		grid = m_HRBFs[i];
-		toWorld = transforms[i];
-		toLocal = toWorld.inverse();
-		//if (grid->m_name != "LeftLeg" && grid->m_name != "RightLeg") continue; // debug
-		
-		for (int x = 0; x < HRBF_RES; x++) {
-			#pragma omp parallel for
-			for (int y = 0; y < HRBF_RES; y++) {
-				float fx, fy, fz;
-				MPoint localP1; // local space coordinates
-				MPoint worldP1;
-				MPoint worldP2; // nearest cell coordinate on composed grid
-				MPoint localP2;
-				float val, mag;
-				int ix, iy, iz; // on the global grid
-				float currVal;
-
-				for (int z = 0; z < HRBF_RES; z++) {
-					grid->mf_vals->idxToCoord(x, y, z, fx, fy, fz);
-					localP1.x = fx; localP1.y = fy; localP1.z = fz; localP1.w = 1.0;
-					// transform point to world coordinates
-					worldP1 = localP1 * toWorld;
-					// get nearest coordinate on the world grid
-					mf_vals->nearestIDX(worldP1.x, worldP1.y, worldP1.z, ix, iy, iz);
-					mf_vals->idxToCoord(ix, iy, iz, fx, fy, fz);
-					worldP2.x = fx; worldP2.y = fy; worldP2.z = fz; worldP2.w = 1.0;
-					// query grid for value at world grid's cell coordinate
-					localP2 = worldP2 * toLocal;
-					grid->query(localP2, val, fx, fy, fz, mag);
-					// max onto grid
-					currVal = mf_vals->getCell(ix, iy, iz);
-					if (currVal < val) {
-						mf_vals->setCell(ix, iy, iz, val);
-					}
-					currVal = mf_gradMag->getCell(ix, iy, iz);
-					if (currVal < mag) {
-						mf_gradX->setCell(ix, iy, iz, fx);
-						mf_gradY->setCell(ix, iy, iz, fy);
-						mf_gradZ->setCell(ix, iy, iz, fz);
-						mf_gradMag->setCell(ix, iy, iz, mag);
-					}
-				}
-			}
-		}
-	} */
 }
 
 void MayaHRBFManager::correct(MItGeometry& iter) {

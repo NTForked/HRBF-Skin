@@ -1,11 +1,18 @@
 04/29/2016
-1) debug the crash-on-startup problem
+1) debug the crash-on-startup problem [done]
 -at least part of it was that we saved scenefiles with some attribs messed with -> don't do this
 -also, having compose take in a joint count that might not be accurate to what compose knows.
 -but also just some values like the grid resolution just changing randomly in debug... what?
 -ok. solved by explicitly mallocing the HRBF manager (hopefully)
 -Karl's theory: maya copies the node class somehow and deletes the original, something gets messed up there.
 -gradients, etc. seem ok... moving on to fixing contact correction...
+
+2) contact correction [done]
+-dunno if more iterations would help, honestly
+-good enough for now
+3) parallelization?
+-doesn't seem to help much (openmp)
+-how do we parallelize maya iterators?
 
 04/28/2016
 6) catch up
