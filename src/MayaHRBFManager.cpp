@@ -104,7 +104,8 @@ void MayaHRBFManager::buildHRBFs(std::vector<int> jointHierarchy, std::vector<st
 				bestHRBF = hrbfCandidates[i];
 			}
 		}
-		m_HRBFs[bestHRBF]->addVertex(pt, nor);
+		if (bestHRBF >= 0 && bestHRBF < m_numJoints)
+			m_HRBFs[bestHRBF]->addVertex(pt, nor);
 
 		// advance the weight list handle
 		weightListHandle.next();
@@ -270,12 +271,14 @@ void MayaHRBFManager::correct(MItGeometry& iter) {
 	MPoint pt;
 	MVector norm;
 
-	float iso;
-	float fv;
-	MVector dfv;
-	float dfx, dfy, dfz;
-	MVector dfv_lag;
-	float dfv_mag;
+	float iso = 0.0f;
+	float fv = 0.0f;
+	MVector dfv(0.0, 0.0, 0.0);
+	float dfx = 0.0f;
+	float dfy = 0.0f;
+	float dfz = 0.0f;
+	MVector dfv_lag(0.0, 0.0, 0.0);
+	float dfv_mag = 0.0f;
 
 	for (; !iter.isDone(); iter.next()) {
 		pt = iter.position();
@@ -312,7 +315,7 @@ void MayaHRBFManager::correct(MItGeometry& iter) {
 			}
 			dfv_lag = dfv;
 			
-			pt += NEWTON_SIGMA * (fv - iso) * dfv.normal();// / (dfv_mag * dfv_mag); // unreliable for bad cases
+			pt += NEWTON_SIGMA * (iso - fv) * dfv.normal();// / (dfv_mag * dfv_mag); // unreliable for bad cases
 		}
 		iter.setPosition(pt);
 		i++;

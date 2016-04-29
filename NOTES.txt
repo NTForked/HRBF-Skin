@@ -24,9 +24,14 @@
 			-splat onto the grid using MAX
 			-btw DON'T USE SETBYCOORDINATE WHEN YOU MEAN SETCELL!!!!!! LOST HOURS AND HOURS TO THAT TYPO
 
--isovalue computation
+-isovalue computation [implemented]
 
--HRBF marching
+-HRBF marching [implemented]
+
+Debugging
+-do a color plot export of gradients for a simple case?
+-do a comprehensive read through -> see if there's any bugs earlier on, try with them fixed
+
 
 7) make the video thing!
 

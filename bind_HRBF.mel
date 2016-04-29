@@ -69,7 +69,7 @@ proc get_joints_DF(string $rootName, string $jointNames[]) {
         return;
     }
     // perform DF traversal using a fake stack
-    int $numJoints = size(`listRelatives -ad $rootName`);
+    int $numJoints = size(`listRelatives -ad $rootName`) + 1;
 
     string $dfStack[];
     int $stackTop = 1;
@@ -139,6 +139,7 @@ proc bind_HRBFskin() {
 
     get_joints_DF($rootJointName, $jointsHierarchy);
     int $numJoints = size($jointsHierarchy);
+    print("detected " + $numJoints + "joints");
 
     get_skeleton_hierarchy($jointsHierarchy, $parentIndices);
 
