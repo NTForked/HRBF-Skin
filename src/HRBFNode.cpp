@@ -270,7 +270,6 @@ HRBFSkinCluster::deform( MDataBlock& block,
 
 	// do HRBF corrections
 	if (useHRBFnow != 0) {
-		// TODO: do HRBF correction
 		hrbfMan.compose(boneTFs, numTransforms);
 		iter.reset();
 		hrbfMan.correct(iter);

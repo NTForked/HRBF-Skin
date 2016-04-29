@@ -12,6 +12,9 @@
 #include <algorithm>
 
 #define HRBF_COMPRES 128
+#define NEWTON_STEPS 25
+#define NEWTON_SIGMA 0.35f
+#define COS_GRAD_ANGLE 0.57357643635 // cosine of 55 degrees
 
 /******************************************************************************
 Implements a skeleton of HRBF nodes.

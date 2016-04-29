@@ -266,6 +266,57 @@ void MayaHRBFManager::compose(MMatrixArray &transforms, int numTransforms) {
 
 void MayaHRBFManager::correct(MItGeometry& iter) {
 
+	int i = 0;
+	MPoint pt;
+	MVector norm;
+
+	float iso;
+	float fv;
+	MVector dfv;
+	float dfx, dfy, dfz;
+	MVector dfv_lag;
+	float dfv_mag;
+
+	for (; !iter.isDone(); iter.next()) {
+		pt = iter.position();
+		norm = iter.normal();
+		iso = m_isoVals[i];
+		norm.normalize();
+		float iso_lag = iso;
+
+		// do 5 newton iterations - equation 4
+		for (int j = 0; j < NEWTON_STEPS; j++) {
+			//mf_vals->trilinear(pt.x, pt.y, pt.z, fv);
+			//// move along normal direction until new fv is worse than old one
+			//if (j != 0 && abs(iso - iso_lag) < abs(iso - fv)) {
+			//	std::cout << "broke out on iteration " << j << std::endl;
+			//	break;
+			//}
+			//MVector step = NEWTON_SIGMA * norm * (iso - fv);
+			//pt += step;
+			//iso_lag = fv;
+
+			mf_gradX->trilinear(pt.x, pt.y, pt.z, dfx);
+			mf_gradZ->trilinear(pt.x, pt.y, pt.z, dfy);
+			mf_gradY->trilinear(pt.x, pt.y, pt.z, dfz);
+			mf_gradMag->trilinear(pt.x, pt.y, pt.z, dfv_mag);
+			dfv.x = dfx; dfv.y = dfy; dfv.z = dfz;
+			// check for discontinuity: angle between grad in this step and previous
+			// if angle is greater than 55 degrees, stop
+			// aka if dot product is < COS_GRAD_ANGLE
+			if (dfv.length() > 0.0001 && dfv_lag.length() > 0.0001
+				&& j != 0 && dfv_lag.normal() * dfv.normal() < COS_GRAD_ANGLE) {
+				std::cout << "discontinuity on iteration " << j << " at ";
+				std::cout << pt.x << " " << pt.y << " " << pt.z << std::endl;
+				break;
+			}
+			dfv_lag = dfv;
+			
+			pt += NEWTON_SIGMA * (fv - iso) * dfv.normal();// / (dfv_mag * dfv_mag); // unreliable for bad cases
+		}
+		iter.setPosition(pt);
+		i++;
+	}
 }
 
 void MayaHRBFManager::debugSamplesToConsole(std::string nodeName) {
