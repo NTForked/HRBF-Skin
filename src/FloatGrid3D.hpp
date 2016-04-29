@@ -26,7 +26,10 @@ public:
 	// members
 	std::vector<float> m_cells;
 	int m_numCells;
-	glm::ivec3 m_res;
+	int m_res_x;
+	int m_res_y;
+	int m_res_z;
+
 	glm::vec3 m_min;
 	glm::vec3 m_max;
 	glm::vec3 m_cellWidth;

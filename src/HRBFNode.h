@@ -104,7 +104,7 @@ public:
 		MArrayDataHandle& weightListHandle,
 		MItGeometry&   iter);
 
-	MayaHRBFManager hrbfMan;
+	MayaHRBFManager* hrbfMan;
 
 	static const MTypeId id;
 

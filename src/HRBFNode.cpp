@@ -9,7 +9,7 @@ void* HRBFSkinCluster::creator()
 	cluster->exportHRBFValuesStatus = ""; // don't export normally
 
 	cluster->exportCompositionStatus = 0; // default value. don't export unless asked.
-	cluster->hrbfMan = MayaHRBFManager();
+	cluster->hrbfMan = new MayaHRBFManager(); // leak it and weep
 	return cluster;
 }
 
@@ -219,7 +219,7 @@ HRBFSkinCluster::deform( MDataBlock& block,
 		std::cout << "instructed to export HRBF samples: " << exportHRBFSamplesStatusNow.c_str() << std::endl;
 		exportHRBFSamplesStatus = exportHRBFSamplesStatusNow;
 		// TODO: handle exporting HRBFs to the text file format
-		hrbfMan.debugSamplesToConsole(exportHRBFSamplesStatus);
+		hrbfMan->debugSamplesToConsole(exportHRBFSamplesStatus);
 	}
 
 	// print HRBF values if requested
@@ -227,7 +227,7 @@ HRBFSkinCluster::deform( MDataBlock& block,
 		std::cout << "instructed to export HRBF values: " << exportHRBFValuesStatusNow.c_str() << std::endl;
 		exportHRBFValuesStatus = exportHRBFValuesStatusNow;
 		// TODO: handle exporting HRBFs to the text file format
-		hrbfMan.debugValuesToConsole(exportHRBFValuesStatus);
+		hrbfMan->debugValuesToConsole(exportHRBFValuesStatus);
 	}
 
 	// print HRBF composition if requested
@@ -235,26 +235,26 @@ HRBFSkinCluster::deform( MDataBlock& block,
 		std::cout << "instructed to export HRBF composition." << std::endl;
 		exportCompositionStatus = exportCompositionStatusNow;
 		// TODO: handle exporting HRBFs to the text file format
-		hrbfMan.debugCompositionToConsole(boneTFs, numTransforms);
+		hrbfMan->debugCompositionToConsole(boneTFs, numTransforms);
 	}
 
 	// check the HRBF value if the new point is significantly different
 	MPoint checkHRBFHereNow(data[0], data[1], data[2]);
 	if ((checkHRBFHereNow - checkHRBFHere).length() > 0.0001) {
-		if (hrbfMan.m_HRBFs.size() == numTransforms) {
+		if (hrbfMan->m_HRBFs.size() == numTransforms) {
 			std::cout << "checking HRBF at x:" << data[0] << " y: " << data[1] << " z: " << data[2] << std::endl;
-			hrbfMan.compose(boneTFs);
+			hrbfMan->compose(boneTFs);
 			float val = 0.0f;
 			float dx = 0.0f;
 			float dy = 0.0f;
 			float dz = 0.0f;
 			float grad = 0.0f;
 
-			hrbfMan.mf_vals->trilinear(data[0], data[1], data[2], val);
-			hrbfMan.mf_gradX->trilinear(data[0], data[1], data[2], dx);
-			hrbfMan.mf_gradY->trilinear(data[0], data[1], data[2], dy);
-			hrbfMan.mf_gradZ->trilinear(data[0], data[1], data[2], dz);
-			hrbfMan.mf_gradMag->trilinear(data[0], data[1], data[2], grad);
+			hrbfMan->mf_vals->trilinear(data[0], data[1], data[2], val);
+			hrbfMan->mf_gradX->trilinear(data[0], data[1], data[2], dx);
+			hrbfMan->mf_gradY->trilinear(data[0], data[1], data[2], dy);
+			hrbfMan->mf_gradZ->trilinear(data[0], data[1], data[2], dz);
+			hrbfMan->mf_gradMag->trilinear(data[0], data[1], data[2], grad);
 			std::cout << "val: " << val << " dx: " << dx << " dy: " << dy << " dz: " << dz << " grad: " << grad << std::endl;
 			checkHRBFHere = checkHRBFHereNow;
 		}
@@ -289,7 +289,7 @@ HRBFSkinCluster::deform( MDataBlock& block,
 		//	std::cout << i << ": " << jointNames[i].c_str() << " : " << jointParentIndices[i] << std::endl;
 		//}
 		std::cout << "rebuilding HRBFs... " << std::endl;
-		hrbfMan.buildHRBFs(jointParentIndices, jointNames, bindTFs, boneTFs, 
+		hrbfMan->buildHRBFs(jointParentIndices, jointNames, bindTFs, boneTFs, 
 			weightListHandle, iter, weights);
 		std::cout << "done rebuilding!" << std::endl;
 		weightListHandle.jumpToElement(0); // reset this, it's an iterator. trust me.
@@ -307,10 +307,10 @@ HRBFSkinCluster::deform( MDataBlock& block,
 
 	// do HRBF corrections
 	if (useHRBFnow != 0) {
-		if (hrbfMan.m_HRBFs.size() == numTransforms) {
-			hrbfMan.compose(boneTFs);
+		if (hrbfMan->m_HRBFs.size() == numTransforms) {
+			hrbfMan->compose(boneTFs);
 			iter.reset();
-			hrbfMan.correct(iter);
+			hrbfMan->correct(iter);
 		}
 	}
 

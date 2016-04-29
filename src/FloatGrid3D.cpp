@@ -4,7 +4,9 @@ FloatGrid3D::FloatGrid3D(int resX, int resY, int resZ,
 	float minX, float minY, float minZ,
 	float maxX, float maxY, float maxZ) {
 
-	m_res = glm::ivec3(resX, resY, resZ);
+	m_res_x = resX;
+	m_res_y = resY;
+	m_res_z = resZ;
 	m_min = glm::vec3(minX, minY, minZ);
 	m_max = glm::vec3(maxX, maxY, maxZ);
 	m_numCells = resX * resY * resZ;
@@ -26,17 +28,17 @@ void FloatGrid3D::resizeAABB(float minX, float minY, float minZ,
 
 	m_min = glm::vec3(minX, minY, minZ);
 	m_max = glm::vec3(maxX, maxY, maxZ);
-	m_cellWidth.x = (maxX - minX) / (float)m_res.x;
-	m_cellWidth.y = (maxY - minY) / (float)m_res.y;
-	m_cellWidth.z = (maxZ - minZ) / (float)m_res.z;
+	m_cellWidth.x = (maxX - minX) / (float)m_res_x;
+	m_cellWidth.y = (maxY - minY) / (float)m_res_y;
+	m_cellWidth.z = (maxZ - minZ) / (float)m_res_z;
 }
 
 void FloatGrid3D::resizeAABB(MPoint min, MPoint max) {
 	m_min = glm::vec3(min.x, min.y, min.z);
 	m_max = glm::vec3(max.x, max.y, max.z);
-	m_cellWidth.x = (max.x - min.x) / (float)m_res.x;
-	m_cellWidth.y = (max.y - min.y) / (float)m_res.y;
-	m_cellWidth.z = (max.z - min.z) / (float)m_res.z;
+	m_cellWidth.x = (max.x - min.x) / (float)m_res_x;
+	m_cellWidth.y = (max.y - min.y) / (float)m_res_y;
+	m_cellWidth.z = (max.z - min.z) / (float)m_res_z;
 }
 
 
@@ -122,11 +124,11 @@ int FloatGrid3D::threeDto1D(int x, int y, int z) {
 
 	// out of bounds? return something indicative.
 	if (x < 0 || y < 0 || z < 0 ||
-		x >= m_res.x || y >= m_res.y || z > m_res.z) {
+		x >= m_res_x || y >= m_res_y || z > m_res_z) {
 		return -1;
 	}
 	// http://www.cplusplus.com/forum/general/137677/
-	return x * m_res.y * m_res.z + y * m_res.z + z;
+	return x * m_res_y * m_res_z + y * m_res_z + z;
 }
 
 bool FloatGrid3D::checkBounds(float x, float y, float z) {
@@ -380,9 +382,9 @@ void FloatGrid3D::exportToDebugString(std::string nodeName) {
 	std::cout << nodeName.c_str() << "\n";
 	float fx, fy, fz;
 	float val;
-	for (int x = 0; x < m_res.x; x += 3) {
-		for (int y = 0; y < m_res.y; y += 3) {
-			for (int z = 0; z < m_res.z; z += 3) {
+	for (int x = 0; x < m_res_x; x += 3) {
+		for (int y = 0; y < m_res_y; y += 3) {
+			for (int z = 0; z < m_res_z; z += 3) {
 				idxToCoord(x, y, z, fx, fy, fz);
 				val = getCell(x, y, z);
 				if (val > 0.0001f)

@@ -155,6 +155,7 @@ void MayaHRBFManager::compose(MMatrixArray &transforms) {
 	// compute an AABB around all the HRBFs
 	// - for each HRBF grid, transform its 8 corners into global coordinates
 	// - walk over all the transformed coordinates to get an HRBF value
+
 	MPoint aabbMin(HUGE_VAL, HUGE_VAL, HUGE_VAL, 1.0);
 	MPoint aabbMax(-HUGE_VAL, -HUGE_VAL, -HUGE_VAL, 1.0);
 	MPoint minLocal;
