@@ -29,8 +29,14 @@
 -HRBF marching [implemented]
 
 Debugging
--do a color plot export of gradients for a simple case?
--do a comprehensive read through -> see if there's any bugs earlier on, try with them fixed
+-add an option to check the HRBF value and gradient at a point [done]
+-consider simplification of the newton iterations
+-realized something: a lot of our global grids don't have contiguous stretches of blocks filled in
+-sometimes stripey -> ok this was a different problem
+-MAYBE a result of how we're splatting!
+-gonna try slow splatting again, see if it helps
+-came up with faster, fuill coverage splatting. slow was too slow.
+-seriously considering just manually evaluating HRBF for every point... hm... -> ok no stupid typo
 
 
 7) make the video thing!

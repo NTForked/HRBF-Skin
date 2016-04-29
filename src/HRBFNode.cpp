@@ -9,7 +9,7 @@ void* HRBFSkinCluster::creator()
 	cluster->exportHRBFValuesStatus = ""; // don't export normally
 
 	cluster->exportCompositionStatus = 0; // default value. don't export unless asked.
-
+	
 	return cluster;
 }
 
@@ -59,6 +59,12 @@ MStatus HRBFSkinCluster::initialize()
 	returnStatus = addAttribute(HRBFSkinCluster::useHRBF);
 	McheckErr(returnStatus, "ERROR adding useHRBF attribute\n");
 
+	HRBFSkinCluster::checkHRBFAt = numAttr.create("checkHRBFAt", "chkHRBF", MFnNumericData::k3Double,
+		0, &returnStatus);
+	McheckErr(returnStatus, "ERROR creating checkHRBFAt attribute\n");
+	returnStatus = addAttribute(HRBFSkinCluster::checkHRBFAt);
+	McheckErr(returnStatus, "ERROR adding checkHRBFAt attribute\n");
+
 	// hierarchy information
 	// http://download.autodesk.com/us/maya/2011help/API/weight_list_node_8cpp-example.html#a15
 	HRBFSkinCluster::jointParentIdcs = numAttr.create("parentJointIDCS", "pJIDCS", MFnNumericData::kInt,
@@ -104,6 +110,10 @@ MStatus HRBFSkinCluster::initialize()
 	returnStatus = attributeAffects(HRBFSkinCluster::jointParentIdcs,
 		HRBFSkinCluster::outputGeom);
 	McheckErr(returnStatus, "ERROR in attributeAffects with jointParentIdcs\n");
+
+	returnStatus = attributeAffects(HRBFSkinCluster::checkHRBFAt,
+		HRBFSkinCluster::outputGeom);
+	McheckErr(returnStatus, "ERROR in attributeAffects with checkHRBFAt\n");
 
     return returnStatus;
 }
@@ -165,6 +175,11 @@ HRBFSkinCluster::deform( MDataBlock& block,
 	MDataHandle envData = block.inputValue(envelope, &returnStatus);
 	float env = envData.asFloat();
 
+	// get point in space for evaluating HRBF
+	MDataHandle checkHRBFAtData = block.inputValue(checkHRBFAt, &returnStatus);
+	McheckErr(returnStatus, "Error getting useDQ handle\n");
+	double* data = checkHRBFAtData.asDouble3();
+
 	// get the influence transforms
 	//
 	MArrayDataHandle transformsHandle = block.inputArrayValue( matrix ); // tell block what we want
@@ -223,6 +238,28 @@ HRBFSkinCluster::deform( MDataBlock& block,
 		hrbfMan.debugCompositionToConsole(boneTFs, numTransforms);
 	}
 
+	// check the HRBF value if the new point is significantly different
+	MPoint checkHRBFHereNow(data[0], data[1], data[2]);
+	if ((checkHRBFHereNow - checkHRBFHere).length() > 0.0001) {
+		if (hrbfMan.m_HRBFs.size() == numTransforms) {
+			std::cout << "checking HRBF at x:" << data[0] << " y: " << data[1] << " z: " << data[2] << std::endl;
+			hrbfMan.compose(boneTFs, numTransforms);
+			float val = 0.0f;
+			float dx = 0.0f;
+			float dy = 0.0f;
+			float dz = 0.0f;
+			float grad = 0.0f;
+
+			hrbfMan.mf_vals->trilinear(data[0], data[1], data[2], val);
+			hrbfMan.mf_gradX->trilinear(data[0], data[1], data[2], dx);
+			hrbfMan.mf_gradY->trilinear(data[0], data[1], data[2], dy);
+			hrbfMan.mf_gradZ->trilinear(data[0], data[1], data[2], dz);
+			hrbfMan.mf_gradMag->trilinear(data[0], data[1], data[2], grad);
+			std::cout << "val: " << val << " dx: " << dx << " dy: " << dy << " dz: " << dz << " grad: " << grad << std::endl;
+			checkHRBFHere = checkHRBFHereNow;
+		}
+	}
+
 	// rebuild HRBFs if needed
 	if (signalRebuildHRBF) {
 		std::cout << "instructed to rebuild HRBFs" << std::endl;
@@ -270,9 +307,11 @@ HRBFSkinCluster::deform( MDataBlock& block,
 
 	// do HRBF corrections
 	if (useHRBFnow != 0) {
-		hrbfMan.compose(boneTFs, numTransforms);
-		iter.reset();
-		hrbfMan.correct(iter);
+		if (hrbfMan.m_HRBFs.size() == numTransforms) {
+			hrbfMan.compose(boneTFs, numTransforms);
+			iter.reset();
+			hrbfMan.correct(iter);
+		}
 	}
 
 	return returnStatus;

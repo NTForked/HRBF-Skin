@@ -222,6 +222,14 @@ void FloatGrid3D::nearestIDX(float x, float y, float z,
 	return;
 }
 
+MPoint FloatGrid3D::idxToCoord(int ix, int iy, int iz) {
+
+	float x = ix * m_cellWidth.x + m_min.x;
+	float y = iy * m_cellWidth.y + m_min.y;
+	float z = iz * m_cellWidth.z + m_min.z;
+	return MPoint(x, y, z, 1.0);
+}
+
 void FloatGrid3D::idxToCoord(int ix, int iy, int iz,
 	float &x, float &y, float &z
 	) {
@@ -372,12 +380,12 @@ void FloatGrid3D::exportToDebugString(std::string nodeName) {
 	std::cout << nodeName.c_str() << "\n";
 	float fx, fy, fz;
 	float val;
-	for (int x = 0; x < m_res.x; x++) {
-		for (int y = 0; y < m_res.y; y++) {
-			for (int z = 0; z < m_res.z; z++) {
+	for (int x = 0; x < m_res.x; x += 3) {
+		for (int y = 0; y < m_res.y; y += 3) {
+			for (int z = 0; z < m_res.z; z += 3) {
 				idxToCoord(x, y, z, fx, fy, fz);
 				val = getCell(x, y, z);
-				if (val > 0.0f)
+				if (val > 0.0001f)
 					std::cout << fx << " " << fy << " " << fz << " " << val << "\n";
 			}
 		}

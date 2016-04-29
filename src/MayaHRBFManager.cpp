@@ -160,6 +160,11 @@ void MayaHRBFManager::compose(MMatrixArray &transforms, int numTransforms) {
 	MPoint minLocal;
 	MPoint maxLocal;
 	//std::string lowestName;
+	std::vector<MPoint> mins;
+	std::vector<MPoint> maxs;
+	mins.resize(m_numJoints);
+	maxs.resize(m_numJoints);
+
 
 	for (int i = 0; i < numTransforms; i++) {
 		if (m_HRBFs[i]->m_posSamples.size() < 1) continue;
@@ -168,6 +173,8 @@ void MayaHRBFManager::compose(MMatrixArray &transforms, int numTransforms) {
 		//if (aabbMin.y > minLocal.y) {
 		//	lowestName = m_HRBFs[i]->m_name;
 		//}
+		mins[i] = minLocal;
+		maxs[i] = maxLocal;
 
 		aabbMin.x = std::min(aabbMin.x, minLocal.x);
 		aabbMin.y = std::min(aabbMin.y, minLocal.y);
@@ -214,12 +221,98 @@ void MayaHRBFManager::compose(MMatrixArray &transforms, int numTransforms) {
 	//  		-compute nearest cell in global grid
 	//  		-query grid for value at that cell coordinate in local space
 	//			-max onto grid
-	MayaHRBF *grid;
-	MMatrix toWorld;
-	MMatrix toLocal;
 
+	/*********** fast splat 2 - more accurate, coverage guaranteed, and should be faster ****************/
+	// for each grid in the manager, compute its AABB in world space
+	// then march over every cube at these indices in world space and compute interp val
 
+	for (int i = 0; i < numTransforms; i++) {
+		MayaHRBF *grid = m_HRBFs[i];
+		MMatrix toLocal = transforms[i].inverse();
+		// compute cell indices of world AABB
+		int x0, y0, z0;
+		int x1, y1, z1;
+		MPoint min = mins[i];
+		MPoint max = maxs[i];
+		mf_vals->coordToIDX(min.x, min.y, min.z, x0, y0, z0);
+		mf_vals->coordToIDX(max.x, max.y, max.z, x1, y1, z1);
 
+		// walk over all those cell points and sample at each one
+		for (int x = x0; x < x1; x++) {
+			for (int y = y0; y < y1; y++) {
+				#pragma omp parallel for
+				for (int z = z0; z < z1; z++) {
+					// transform coordinate into local space
+					MPoint worldCoord = mf_vals->idxToCoord(x, y, z);
+					MPoint localCoord = worldCoord * toLocal;
+					float val = 0.0f;
+					float dx = 0.0f;
+					float dy = 0.0f;
+					float dz = 0.0f;
+					float mag = 0.0f;
+					grid->query(localCoord, val, dx, dy, dz, mag);
+
+					float currVal = mf_vals->getCell(x, y, z);
+					float currMag = mf_gradMag->getCell(x, y, z);
+					if (val > currVal) {
+						mf_vals->setCell(x, y, z, val);
+					}
+					if (mag > currMag) {
+						mf_gradMag->setCell(x, y, z, mag);
+						mf_gradX->setCell(x, y, z, dx);
+						mf_gradY->setCell(x, y, z, dy);
+						mf_gradZ->setCell(x, y, z, dz);
+					}
+				}
+			}
+		}
+	}
+	return;
+
+	/*********** slow splat - more accurate, coverage guaranteed ****************/
+	/*
+	// but... too slow! what to do?
+	for (int x = 0; x < HRBF_COMPRES; x++) {
+		for (int y = 0; y < HRBF_COMPRES; y++) {
+			#pragma omp parallel for
+			for (int z = 0; z < HRBF_COMPRES; z++) {
+				MayaHRBF *grid;
+				MMatrix toWorld;
+				MMatrix toLocal;
+				for (int i = 0; i < numTransforms; i++) {
+					grid = m_HRBFs[i];
+					toWorld = transforms[i];
+					toLocal = toWorld.inverse();
+					MPoint world1 = mf_vals->idxToCoord(x, y, z);
+
+					// transform this coordinate to local space for the current HRBF
+					MPoint local1 = world1 * toLocal;
+					float val = 0.0f;
+					float dx = 0.0f;
+					float dy = 0.0f;
+					float dz = 0.0f;
+					float mag = 0.0f;
+					grid->query(local1, val, dx, dy, dz, mag);
+
+					float currVal = mf_vals->getCell(x, y, z);
+					float currMag = mf_gradMag->getCell(x, y, z);
+					if (val > currVal) {
+						mf_vals->setByCoordinate(x, y, z, val);
+					}
+					if (mag > currMag) {
+						mf_gradMag->setByCoordinate(x, y, z, mag);
+						mf_gradX->setByCoordinate(x, y, z, dx);
+						mf_gradY->setByCoordinate(x, y, z, dy);
+						mf_gradZ->setByCoordinate(x, y, z, dz);
+					}
+				}
+			}
+		}
+	}
+	return; */
+
+	/********* fast splat - less accurate, coverage NOT guaranteed! **************/
+	/*
 	for (int i = 0; i < numTransforms; i++) {
 		grid = m_HRBFs[i];
 		toWorld = transforms[i];
@@ -254,6 +347,9 @@ void MayaHRBFManager::compose(MMatrixArray &transforms, int numTransforms) {
 					currVal = mf_vals->getCell(ix, iy, iz);
 					if (currVal < val) {
 						mf_vals->setCell(ix, iy, iz, val);
+					}
+					currVal = mf_gradMag->getCell(ix, iy, iz);
+					if (currVal < mag) {
 						mf_gradX->setCell(ix, iy, iz, fx);
 						mf_gradY->setCell(ix, iy, iz, fy);
 						mf_gradZ->setCell(ix, iy, iz, fz);
@@ -262,7 +358,7 @@ void MayaHRBFManager::compose(MMatrixArray &transforms, int numTransforms) {
 				}
 			}
 		}
-	}
+	} */
 }
 
 void MayaHRBFManager::correct(MItGeometry& iter) {
@@ -287,18 +383,8 @@ void MayaHRBFManager::correct(MItGeometry& iter) {
 		norm.normalize();
 		float iso_lag = iso;
 
-		// do 5 newton iterations - equation 4
+		// do newton iterations - equation 4
 		for (int j = 0; j < NEWTON_STEPS; j++) {
-			//mf_vals->trilinear(pt.x, pt.y, pt.z, fv);
-			//// move along normal direction until new fv is worse than old one
-			//if (j != 0 && abs(iso - iso_lag) < abs(iso - fv)) {
-			//	std::cout << "broke out on iteration " << j << std::endl;
-			//	break;
-			//}
-			//MVector step = NEWTON_SIGMA * norm * (iso - fv);
-			//pt += step;
-			//iso_lag = fv;
-
 			mf_gradX->trilinear(pt.x, pt.y, pt.z, dfx);
 			mf_gradZ->trilinear(pt.x, pt.y, pt.z, dfy);
 			mf_gradY->trilinear(pt.x, pt.y, pt.z, dfz);
@@ -309,13 +395,13 @@ void MayaHRBFManager::correct(MItGeometry& iter) {
 			// aka if dot product is < COS_GRAD_ANGLE
 			if (dfv.length() > 0.0001 && dfv_lag.length() > 0.0001
 				&& j != 0 && dfv_lag.normal() * dfv.normal() < COS_GRAD_ANGLE) {
-				std::cout << "discontinuity on iteration " << j << " at ";
-				std::cout << pt.x << " " << pt.y << " " << pt.z << std::endl;
+				//std::cout << "discontinuity on iteration " << j << " at ";
+				//std::cout << pt.x << " " << pt.y << " " << pt.z << std::endl;
 				break;
 			}
 			dfv_lag = dfv;
 			
-			pt += NEWTON_SIGMA * (iso - fv) * dfv.normal();// / (dfv_mag * dfv_mag); // unreliable for bad cases
+			pt += NEWTON_SIGMA * (fv - iso) * dfv.normal();// / (dfv_mag * dfv_mag); // unreliable for bad cases
 		}
 		iter.setPosition(pt);
 		i++;

@@ -123,6 +123,9 @@ public:
 
 	static MObject jointParentIdcs; // for getting skeleton hierarchy information into the node
 	static MObject jointNames; // for getting joint names. useful for debugging and printing.
+
+	static MObject checkHRBFAt; // for checking the HRBF value and gradient at a sample point in space.
+	MPoint checkHRBFHere;
 };
 
 const MTypeId HRBFSkinCluster::id(0x00080030);
@@ -136,5 +139,7 @@ MObject HRBFSkinCluster::useDQ;
 MObject HRBFSkinCluster::useHRBF;
 MObject HRBFSkinCluster::jointParentIdcs;
 MObject HRBFSkinCluster::jointNames;
+
+MObject HRBFSkinCluster::checkHRBFAt;
 
 #endif

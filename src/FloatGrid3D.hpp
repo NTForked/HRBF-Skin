@@ -41,6 +41,8 @@ public:
 	float distToIDX(float x, float y, float z, int ix, int iy, int iz);
 	void nearestIDX(float x, float y, float z, int &ix, int &iy, int &iz);
 	void idxToCoord(int ix, int iy, int iz, float &x, float &y, float &z);
+	MPoint idxToCoord(int ix, int iy, int iz);
+
 	MVector idxToMVector(int ix, int iy, int iz);
 
 	/***************** accessor/setters *****************/
