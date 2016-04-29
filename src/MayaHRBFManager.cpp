@@ -241,7 +241,6 @@ void MayaHRBFManager::compose(MMatrixArray &transforms) {
 		// walk over all those cell points and sample at each one
 		for (int x = x0; x < x1; x++) {
 			for (int y = y0; y < y1; y++) {
-				#pragma omp parallel for
 				for (int z = z0; z < z1; z++) {
 					// transform coordinate into local space
 					MPoint worldCoord = mf_vals->idxToCoord(x, y, z);
@@ -384,8 +383,9 @@ void MayaHRBFManager::correct(MItGeometry& iter) {
 		norm.normalize();
 		float iso_lag = iso;
 
-		// do newton iterations - equation 4
+		// do newton iterations - equation 4, but... with some modifications
 		for (int j = 0; j < NEWTON_STEPS; j++) {
+			mf_vals->trilinear(pt.x, pt.y, pt.z, fv);
 			mf_gradX->trilinear(pt.x, pt.y, pt.z, dfx);
 			mf_gradZ->trilinear(pt.x, pt.y, pt.z, dfy);
 			mf_gradY->trilinear(pt.x, pt.y, pt.z, dfz);
@@ -396,13 +396,20 @@ void MayaHRBFManager::correct(MItGeometry& iter) {
 			// aka if dot product is < COS_GRAD_ANGLE
 			if (dfv.length() > 0.0001 && dfv_lag.length() > 0.0001
 				&& j != 0 && dfv_lag.normal() * dfv.normal() < COS_GRAD_ANGLE) {
-				//std::cout << "discontinuity on iteration " << j << " at ";
+				//std::cout << "discontinuity on iteration " << j << std::endl;
 				//std::cout << pt.x << " " << pt.y << " " << pt.z << std::endl;
 				break;
 			}
+			if (j != 0 && abs(iso_lag - iso) < abs(iso - fv)) {
+				//std::cout << "worsened on iteration " << j << std::endl;
+			
+				break; // quit if moving here is making your iso worse
+			}
+			iso_lag = fv;
+
 			dfv_lag = dfv;
 			
-			pt += NEWTON_SIGMA * (fv - iso) * dfv.normal();// / (dfv_mag * dfv_mag); // unreliable for bad cases
+			pt += NEWTON_SIGMA * (iso - fv) * norm;// dfv.normal();// / (dfv_mag * dfv_mag); // unreliable for bad cases
 		}
 		iter.setPosition(pt);
 		i++;
